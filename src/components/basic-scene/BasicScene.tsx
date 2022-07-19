@@ -16,27 +16,25 @@ export const LightRig: React.FC = () => {
 };
 
 export const BasicScene: React.FC<React.PropsWithChildren<{}>> = ({
-  children
+  children,
 }) => {
   return (
     <Canvas
-    onCreated={state => state.gl.setClearColor("black") //wie die nacht
-    }
-      gl={{ logarithmicDepthBuffer: true,
-      
-      }}
+      onCreated={
+        (state) => state.gl.setClearColor("black") //wie die nacht
+      }
+      gl={{ logarithmicDepthBuffer: true }}
       camera={{
         near: 0.01,
-        far: 100_000_000
+        far: 100_000_000,
       }}
       shadows
       style={{
         position: "absolute",
         top: 0,
         left: 0,
-        zIndex: 1
+        zIndex: 1,
       }}
-      
     >
       <React.Suspense fallback={null}>
         {children}

@@ -2,7 +2,7 @@ import {
   ChunkGenerator3,
   createThreadedPlanetWorker,
   Noise,
-  NOISE_STYLES
+  NOISE_STYLES,
 } from "@hello-worlds/planets";
 import { Color, Vector3 } from "three";
 

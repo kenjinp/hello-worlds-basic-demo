@@ -5,7 +5,7 @@ import { useControls } from "leva";
 import * as React from "react";
 import { MathUtils, Vector3 } from "three";
 import { randomBias, randomSpherePoint } from "./Moon.math";
-import { ThreadParams } from './Moon.worker';
+import { ThreadParams } from "./Moon.worker";
 import planetWorker from "./Moon.worker?worker";
 
 const tempVector3 = new Vector3();
@@ -76,23 +76,28 @@ const Moon: React.FC = () => {
 
   const { camera } = useThree();
 
-  const randomPointsOnSphere: ThreadParams["randomPoints"] = React.useMemo(() => {
-    return Array(crater.numberOfCraters)
-      .fill(0)
-      .map(() => {
-        const [x, y, z] = randomSpherePoint(0, 0, 0, planet.planetRadius);
-        const randomRadius =randomBias(10, planet.planetRadius / 10, 15, 0.9);
-        return {
-          floorHeight: MathUtils.randFloat(-1, 0),
-          radius: randomRadius,
-          center: tempVector3.set(x, y, z).clone(),
-        };
-      });
-  }, [planet.planetRadius, crater]);
+  const randomPointsOnSphere: ThreadParams["randomPoints"] =
+    React.useMemo(() => {
+      return Array(crater.numberOfCraters)
+        .fill(0)
+        .map(() => {
+          const [x, y, z] = randomSpherePoint(0, 0, 0, planet.planetRadius);
+          const randomRadius = randomBias(
+            10,
+            planet.planetRadius / 10,
+            15,
+            0.9
+          );
+          return {
+            floorHeight: MathUtils.randFloat(-1, 0),
+            radius: randomRadius,
+            center: tempVector3.set(x, y, z).clone(),
+          };
+        });
+    }, [planet.planetRadius, crater]);
 
-
-
-  return (<Planet
+  return (
+    <Planet
       planetProps={{
         radius: planet.planetRadius,
         minCellSize: planet.minCellSize,
@@ -116,8 +121,8 @@ const Moon: React.FC = () => {
       >
         <Stars />
       </group>
-  </Planet>
+    </Planet>
   );
-}
+};
 
 export default Moon;
