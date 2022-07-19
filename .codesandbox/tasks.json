@@ -1,13 +1,27 @@
 {
   // These tasks will run in order when initializing your CodeSandbox project.
-  "setupTasks": [],
+  "setupTasks": [
+    {
+      "name": "pnpm i",
+      "command": "pnpm i"
+    }
+  ],
 
   // These tasks can be run from CodeSandbox. Running one will open a log in the app.
   "tasks": {
+    "pnpm i": {
+      "name": "Install",
+      "command": "pnpm i",
+      "runAtStart": true
+    },
     "pnpm run dev": {
-      "name": "pnpm run dev",
+      "name": "Dev",
       "command": "pnpm run dev --host",
       "runAtStart": true
+    },
+    "lint": {
+      "name": "Prettier",
+      "command": "node_modules/.bin/prettier src --write"
     }
   }
 }
