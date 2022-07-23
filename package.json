@@ -9,15 +9,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@hello-worlds/core": "^0.0.4",
-    "@hello-worlds/planets": "^0.0.4",
-    "@hello-worlds/react": "^0.0.4",
+    "@hello-worlds/core": "0.0.5",
+    "@hello-worlds/planets": "0.0.6",
+    "@hello-worlds/react": "0.0.6",
     "@react-three/drei": "^9.17.1",
     "@react-three/fiber": "^8.2.0",
+    "fp-ts": "^2.12.1",
+    "gl-noise": "^1.6.1",
     "leva": "^0.9.29",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "three": "^0.142.0"
+    "shader-composer": "^0.0.3",
+    "shader-composer-toybox": "^0.0.1",
+    "three": "^0.142.0",
+    "three-custom-shader-material": "^3.4.4"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^3.3.0",

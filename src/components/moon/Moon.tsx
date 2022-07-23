@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 import { useControls } from "leva";
 import * as React from "react";
 import { MathUtils, Vector3 } from "three";
+import Ocean from "../ocean/Ocean";
 import { randomBias, randomSpherePoint } from "./Moon.math";
 import { ThreadParams } from "./Moon.worker";
 import planetWorker from "./Moon.worker?worker";
@@ -30,6 +31,15 @@ const Moon: React.FC = () => {
       max: 10_000_000,
       value: 128,
       step: 10,
+    },
+  });
+
+  const ocean = useControls("ocean", {
+    seaLevel: {
+      min: -100,
+      max: 100,
+      value: 5,
+      step: 1,
     },
   });
 
@@ -121,6 +131,7 @@ const Moon: React.FC = () => {
       >
         <Stars />
       </group>
+      <Ocean seaLevel={ocean.seaLevel} radius={planet.planetRadius} />
     </Planet>
   );
 };
