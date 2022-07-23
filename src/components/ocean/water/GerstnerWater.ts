@@ -81,7 +81,7 @@ export default class GerstnerWaterMaterial {
           value: 0.4,
         },
         contrast: {
-          value: 3.1,
+          value: 1.0,
         },
         brightness: {
           value: 1,

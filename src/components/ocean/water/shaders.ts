@@ -29,7 +29,12 @@ export const vert = /* glsl */ `
       );
   }
 
-  void main() {
+  vec3 orthogonal(vec3 v) {
+    return normalize(abs(v.x) > abs(v.z) ? vec3(-v.y, v.x, 0.0)
+    : vec3(0.0, -v.z, v.y));
+  }
+
+  vec3 displace(vec3 position) {
     vec3 localPosition = position;
     vec3 gridPoint = position.xyz;
     vec3 tangent = vec3(1, 0, 0);
@@ -40,10 +45,28 @@ export const vert = /* glsl */ `
     p += GerstnerWave(waveA, gridPoint);
     p += GerstnerWave(waveB, gridPoint);
     p += GerstnerWave(waveC, gridPoint);
+    return p;
+  }
+  
+  vec3 recalcNormals(vec3 newPos) {
+    float offset = 0.001;
+    vec3 tangent = orthogonal(normal);
+    vec3 bitangent = normalize(cross(normal, tangent));
+    vec3 neighbour1 = position + tangent * offset;
+    vec3 neighbour2 = position + bitangent * offset;
+  
+    vec3 displacedNeighbour1 = displace(neighbour1);
+    vec3 displacedNeighbour2 = displace(neighbour2);
+  
+    vec3 displacedTangent = displacedNeighbour1 - newPos;
+    vec3 displacedBitangent = displacedNeighbour2 - newPos;
+  
+    return normalize(cross(displacedTangent, displacedBitangent));
+  }
 
-    vHeight = gridPoint.y;
-    csm_Position = p;
-    csm_Normal = normal;
+  void main() {
+    csm_Position = displace(position);
+    csm_Normal = recalcNormals(csm_Position);
   }
 
 `;
@@ -59,8 +82,8 @@ export const frag = /* glsl */ `
   uniform float brightness;
 
   vec3 calcColor() {
-    float mask = (pow(vHeight, 2.) - offset) * contrast;
-    // vec3 diffuseColor = mix(waterColor, waterHighlight, vHeight);
+    float mask = (pow(vHeight, 2.0) - offset) * contrast;
+    // vec3 diffuseColor = mix(waterColor, waterHighlight, mask);
     vec3 diffuseColor = waterColor;
     diffuseColor *= brightness;
     return diffuseColor;

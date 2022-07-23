@@ -38,7 +38,7 @@ const Moon: React.FC = () => {
     seaLevel: {
       min: -100,
       max: 100,
-      value: 5,
+      value: 50,
       step: 1,
     },
   });
