@@ -1,6 +1,8 @@
 import { Canvas } from "@react-three/fiber";
+import { EffectComposer } from "@react-three/postprocessing";
 import * as React from "react";
 import { Vector3 } from "three";
+import { AtmosphereEffect } from "../atmosphere/Atmosphere";
 
 export const LightRig: React.FC = () => {
   return (
@@ -36,10 +38,14 @@ export const BasicScene: React.FC<React.PropsWithChildren<{}>> = ({
         zIndex: 1,
       }}
     >
-      <React.Suspense fallback={null}>
-        {children}
-        <LightRig />
-      </React.Suspense>
+      <EffectComposer>
+        <AtmosphereEffect />
+        {/* <Bloom luminanceThreshold={0} luminanceSmoothing={0.9} height={300} /> */}
+        <React.Suspense fallback={null}>
+          {children}
+          <LightRig />
+        </React.Suspense>
+      </EffectComposer>
     </Canvas>
   );
 };
