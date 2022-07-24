@@ -12,13 +12,15 @@ import planetWorker from "./Moon.worker?worker";
 
 const tempVector3 = new Vector3();
 
+const actualMoonSize = 1_700_000;
+
 const Moon: React.FC = () => {
   const planet = useControls("planet", {
     invert: false,
     planetRadius: {
       min: 10,
-      max: 5_000,
-      value: 4_000,
+      max: 7_000_000,
+      value: 5_000,
       step: 10,
     },
     minCellSize: {

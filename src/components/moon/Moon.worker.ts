@@ -40,12 +40,12 @@ const simpleHeight: ChunkGenerator3<ThreadParams, number> = {
   // maybe we can use this as a base for an ocean
   get({ input, data: { rimWidth, rimSteepness, randomPoints, smoothness } }) {
     const noise = new Noise({
-      octaves: 50,
+      octaves: 20,
       persistence: 0.707,
       lacunarity: 1.8,
       exponentiation: 4.5,
-      height: 300.0,
-      scale: 1100.0,
+      height: 1000.0,
+      scale: 2500.0,
       seed: "🌱", // should set this at build time... or sync through net
       noiseType: NOISE_STYLES.simplex,
     });

@@ -4,8 +4,6 @@ import { forwardRef, useMemo } from "react";
 import { Camera, Uniform, Vector2, Vector3, WebGLRenderer } from "three";
 import fragment from "./Atmosphere.frag.glsl";
 
-let _uParam: any;
-
 // Effect implementation
 class MyCustomEffectImpl extends Effect {
   camera: Camera;

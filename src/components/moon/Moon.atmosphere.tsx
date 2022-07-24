@@ -9,8 +9,8 @@ export const MoonAtmosphere: React.FC = () => {
   const atmosphere = useControls("atmosphere", {
     atmosphereRadius: {
       min: 1,
-      max: 10_000,
-      value: 4_050,
+      max: planet.planetProps.radius * 5,
+      value: planet.planetProps.radius * 2.0,
       step: 1,
     },
   });

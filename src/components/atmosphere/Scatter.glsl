@@ -167,7 +167,7 @@ vec3 calculate_scattering(
     }
     
     // calculate how much light can pass through the atmosphere
-    vec3 opacity = vec3(1.0);//= exp(-(beta_mie * opt_i.y + beta_ray * opt_i.x + beta_absorption * opt_i.z));
+    vec3 opacity = exp(-(beta_mie * opt_i.y + beta_ray * opt_i.x + beta_absorption * opt_i.z));
     
 	// calculate and return the final color
     return (
