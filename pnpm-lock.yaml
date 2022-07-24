@@ -25,6 +25,7 @@ specifiers:
   three-custom-shader-material: ^3.4.4
   typescript: ^4.6.4
   vite: ^3.0.0
+  vite-plugin-glsl: ^0.3.0
 
 dependencies:
   '@hello-worlds/core': 0.0.5
@@ -53,6 +54,7 @@ devDependencies:
   prettier: 2.7.1
   typescript: 4.7.4
   vite: 3.0.2
+  vite-plugin-glsl: 0.3.0
 
 packages:
 
@@ -884,6 +886,14 @@ packages:
       three-stdlib: 2.12.1_three@0.142.0
     dev: false
 
+  /@rollup/pluginutils/4.2.1:
+    resolution: {integrity: sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==}
+    engines: {node: '>= 8.0.0'}
+    dependencies:
+      estree-walker: 2.0.2
+      picomatch: 2.3.1
+    dev: true
+
   /@stitches/react/1.2.8_react@18.2.0:
     resolution: {integrity: sha512-9g9dWI4gsSVe8bNLlb+lMkBYsnIKCZTmvqvDG+Avnn69XfmHZKiaMrx7cgTaddq7aTPPmXiTsbFcUy0xgI4+wA==}
     peerDependencies:
@@ -1330,6 +1340,10 @@ packages:
     engines: {node: '>=0.8.0'}
     dev: true
 
+  /estree-walker/2.0.2:
+    resolution: {integrity: sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w==}
+    dev: true
+
   /extend-shallow/2.0.1:
     resolution: {integrity: sha512-zCnTtlxNoAiDc3gqY2aYAWFx7XWWiasuF2K8Me5WbN8otHKTUKBwjPtNpRs/rbUZm7KxWAaNj7P1a/p52GbVug==}
     engines: {node: '>=0.10.0'}
@@ -1603,6 +1617,11 @@ packages:
 
   /picocolors/1.0.0:
     resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
+    dev: true
+
+  /picomatch/2.3.1:
+    resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
+    engines: {node: '>=8.6'}
     dev: true
 
   /postcss/8.4.14:
@@ -2008,6 +2027,13 @@ packages:
   /v8n/1.5.1:
     resolution: {integrity: sha512-LdabyT4OffkyXFCe9UT+uMkxNBs5rcTVuZClvxQr08D5TUgo1OFKkoT65qYRCsiKBl/usHjpXvP4hHMzzDRj3A==}
     dev: false
+
+  /vite-plugin-glsl/0.3.0:
+    resolution: {integrity: sha512-cH7ni+Y3Vz1yOumvrP/71hXVdyTxZIaYYNDeK7KMvO5nzo0uGZZrrkwEVUaESS8/5dYemb/6G0YBj3jsP2sW1A==}
+    engines: {node: '>= 14.18.0', npm: '>= 6.14.17'}
+    dependencies:
+      '@rollup/pluginutils': 4.2.1
+    dev: true
 
   /vite/3.0.2:
     resolution: {integrity: sha512-TAqydxW/w0U5AoL5AsD9DApTvGb2iNbGs3sN4u2VdT1GFkQVUfgUldt+t08TZgi23uIauh1TUOQJALduo9GXqw==}

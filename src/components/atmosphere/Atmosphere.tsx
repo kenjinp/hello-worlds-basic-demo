@@ -1,8 +1,8 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import { Effect, EffectAttribute } from "postprocessing";
 import { forwardRef, useMemo } from "react";
 import { Camera, Uniform, Vector2, Vector3, WebGLRenderer } from "three";
-import { fragmentShader, vertexShader } from "./Atmosphere.shader";
+import fragment from "./Atmosphere.frag.glsl";
 
 let _uParam: any;
 
@@ -11,13 +11,13 @@ class MyCustomEffectImpl extends Effect {
   camera: Camera;
   atmosphereRadius: number;
   planetOrigin: Vector3;
-  sunDir: Vector3;
+  sunPosition: Vector3;
   constructor({
     camera,
     renderer,
     planetOrigin,
     planetRadius,
-    sunDir,
+    sunPosition,
     atmosphereRadius,
   }: {
     camera: Camera;
@@ -25,14 +25,14 @@ class MyCustomEffectImpl extends Effect {
     planetOrigin: Vector3;
     atmosphereRadius: number;
     planetRadius: number;
-    sunDir: Vector3;
+    sunPosition: Vector3;
   }) {
     const height = renderer.domElement.clientHeight;
     const width = renderer.domElement.clientWidth;
     const viewVector = new Vector3();
     camera.getWorldDirection(viewVector);
 
-    super("MyCustomEffect", fragmentShader, {
+    super("MyCustomEffect", fragment, {
       uniforms: new Map([
         ["uWorldspaceCameraPosition", new Uniform(camera.position)],
         ["uViewVector", new Uniform(viewVector)],
@@ -41,27 +41,26 @@ class MyCustomEffectImpl extends Effect {
         ["uAtmosphereRadius", new Uniform(atmosphereRadius)],
         ["uPlanetOrigin", new Uniform(planetOrigin)],
         ["uPlanetRadius", new Uniform(planetRadius)],
-        ["uDirToSun", new Uniform(sunDir)],
+        ["uSunPosition", new Uniform(sunPosition)],
       ]),
       attributes: EffectAttribute.DEPTH,
-      vertexShader: vertexShader,
     });
 
     this.camera = camera;
     this.planetOrigin = planetOrigin;
     this.atmosphereRadius = atmosphereRadius;
-    this.sunDir = sunDir;
+    this.sunPosition = sunPosition;
   }
 
   updateProps({
     atmosphereRadius,
-    sunDir,
+    sunPosition,
   }: {
     atmosphereRadius: number;
-    sunDir: Vector3;
+    sunPosition: Vector3;
   }) {
     this.atmosphereRadius = atmosphereRadius;
-    this.sunDir = sunDir;
+    this.sunPosition = sunPosition;
   }
 
   update() {
@@ -70,7 +69,7 @@ class MyCustomEffectImpl extends Effect {
     this.uniforms.get("uViewVector").value = viewVector;
     this.uniforms.get("uWorldspaceCameraPosition").value = this.camera.position;
     this.uniforms.get("uAtmosphereRadius").value = this.atmosphereRadius;
-    this.uniforms.get("uDirToSun").value = this.sunDir;
+    this.uniforms.get("uSunPosition").value = this.sunPosition;
   }
 }
 
@@ -86,30 +85,16 @@ export const AtmosphereEffect = forwardRef<
 >(({ planetOrigin, atmosphereRadius, planetRadius, sunPosition }, ref) => {
   const { camera, gl } = useThree();
 
-  const getSunDir = () => {
-    const oldLookatViewVector = new Vector3();
-    camera.getWorldDirection(oldLookatViewVector);
-    camera.lookAt(sunPosition);
-    const sunDir = new Vector3();
-    camera.getWorldDirection(sunDir);
-    camera.lookAt(oldLookatViewVector);
-    return sunDir;
-  };
-
   const effect = useMemo(() => {
     return new MyCustomEffectImpl({
       camera,
       renderer: gl,
       planetOrigin,
       atmosphereRadius,
-      sunDir: getSunDir(),
+      sunPosition,
       planetRadius,
     });
   }, [camera, gl, planetOrigin, atmosphereRadius]);
-
-  useFrame(() => {
-    effect.updateProps({ atmosphereRadius, sunDir: getSunDir() });
-  });
 
   return <primitive ref={ref} object={effect} dispose={null} />;
 });

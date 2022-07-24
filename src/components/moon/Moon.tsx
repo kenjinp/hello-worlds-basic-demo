@@ -5,7 +5,6 @@ import { EffectComposer } from "@react-three/postprocessing";
 import { useControls } from "leva";
 import * as React from "react";
 import { MathUtils, Vector3 } from "three";
-import Ocean from "../ocean/Ocean";
 import { MoonAtmosphere } from "./Moon.atmosphere";
 import { randomBias, randomSpherePoint } from "./Moon.math";
 import { ThreadParams } from "./Moon.worker";
@@ -136,7 +135,7 @@ const Moon: React.FC = () => {
       <EffectComposer>
         <MoonAtmosphere />
       </EffectComposer>
-      <Ocean seaLevel={ocean.seaLevel} radius={planet.planetRadius} />
+      {/* <Ocean seaLevel={ocean.seaLevel} radius={planet.planetRadius} /> */}
     </Planet>
   );
 };

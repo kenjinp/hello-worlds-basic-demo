@@ -10,7 +10,7 @@ export const MoonAtmosphere: React.FC = () => {
     atmosphereRadius: {
       min: 1,
       max: 10_000,
-      value: 4_000,
+      value: 4_050,
       step: 1,
     },
   });
