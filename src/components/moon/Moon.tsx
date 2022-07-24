@@ -1,10 +1,12 @@
 import { OrbitCamera, Planet } from "@hello-worlds/react";
 import { Stars } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
+import { EffectComposer } from "@react-three/postprocessing";
 import { useControls } from "leva";
 import * as React from "react";
 import { MathUtils, Vector3 } from "three";
 import Ocean from "../ocean/Ocean";
+import { MoonAtmosphere } from "./Moon.atmosphere";
 import { randomBias, randomSpherePoint } from "./Moon.math";
 import { ThreadParams } from "./Moon.worker";
 import planetWorker from "./Moon.worker?worker";
@@ -131,6 +133,9 @@ const Moon: React.FC = () => {
       >
         <Stars />
       </group>
+      <EffectComposer>
+        <MoonAtmosphere />
+      </EffectComposer>
       <Ocean seaLevel={ocean.seaLevel} radius={planet.planetRadius} />
     </Planet>
   );
