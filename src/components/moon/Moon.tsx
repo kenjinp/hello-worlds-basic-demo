@@ -1,11 +1,9 @@
-import { OrbitCamera, Planet } from "@hello-worlds/react";
+import { Planet } from "@hello-worlds/react";
 import { Stars } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { EffectComposer } from "@react-three/postprocessing";
 import { useControls } from "leva";
 import * as React from "react";
 import { MathUtils, Vector3 } from "three";
-import { MoonAtmosphere } from "./Moon.atmosphere";
 import { randomBias, randomSpherePoint } from "./Moon.math";
 import { ThreadParams } from "./Moon.worker";
 import planetWorker from "./Moon.worker?worker";
@@ -15,7 +13,7 @@ const tempVector3 = new Vector3();
 const actualMoonSize = 1_700_000;
 
 const Moon: React.FC = () => {
-  const planet = useControls("planet", {
+  const planet = useControls("moon", {
     invert: false,
     planetRadius: {
       min: 10,
@@ -126,7 +124,9 @@ const Moon: React.FC = () => {
         smoothness: crater.smoothness,
       }}
     >
-      <OrbitCamera />
+      {/* <OrbitCamera
+      // maxDistanceMultiplier={1000}
+      /> */}
       <group
         scale={new Vector3(1, 1, 1)
           .multiplyScalar(planet.planetRadius)
@@ -134,9 +134,9 @@ const Moon: React.FC = () => {
       >
         <Stars />
       </group>
-      <EffectComposer>
+      {/* <EffectComposer>
         <MoonAtmosphere />
-      </EffectComposer>
+      </EffectComposer> */}
       {/* <Ocean seaLevel={ocean.seaLevel} radius={planet.planetRadius} /> */}
     </Planet>
   );

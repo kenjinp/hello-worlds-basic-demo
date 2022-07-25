@@ -12,6 +12,7 @@ specifiers:
   '@types/react-dom': ^18.0.6
   '@types/three': ^0.142.0
   '@vitejs/plugin-react': ^2.0.0
+  delaunator: ^5.0.0
   fp-ts: ^2.12.1
   gl-noise: ^1.6.1
   leva: ^0.9.29
@@ -34,6 +35,7 @@ dependencies:
   '@react-three/drei': 9.17.1_qjhrljb2mtzgjxqgwzxrcgr5me
   '@react-three/fiber': 8.2.0_5kidazjkmgjhxqotnaqokpbepa
   '@react-three/postprocessing': 2.5.1_noqc5hrtllbymtk7u4tau3xafa
+  delaunator: 5.0.0
   fp-ts: 2.12.1
   gl-noise: 1.6.1
   leva: 0.9.29_biqbaboplfbrettd7655fr4n2y
@@ -1103,6 +1105,12 @@ packages:
       ms: 2.1.2
     dev: true
 
+  /delaunator/5.0.0:
+    resolution: {integrity: sha512-AyLvtyJdbv/U1GkiS6gUUzclRoAY4Gs75qkMygJJhU75LW4DNuSF2RMzpxs9jw9Oz1BobHjTdkG3zdP55VxAqw==}
+    dependencies:
+      robust-predicates: 3.0.1
+    dev: false
+
   /dequal/2.0.3:
     resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
     engines: {node: '>=6'}
@@ -1781,6 +1789,10 @@ packages:
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
     dev: true
+
+  /robust-predicates/3.0.1:
+    resolution: {integrity: sha512-ndEIpszUHiG4HtDsQLeIuMvRsDnn8c8rYStabochtUeCvfuvNptb5TUbVD68LRAILPX7p9nqQGh4xJgn3EHS/g==}
+    dev: false
 
   /rollup/2.77.0:
     resolution: {integrity: sha512-vL8xjY4yOQEw79DvyXLijhnhh+R/O9zpF/LEgkCebZFtb6ELeN9H3/2T0r8+mp+fFTBHZ5qGpOpW2ela2zRt3g==}

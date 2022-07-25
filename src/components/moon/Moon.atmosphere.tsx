@@ -15,6 +15,7 @@ export const MoonAtmosphere: React.FC = () => {
     },
   });
 
+  // TODO fix update position and radius
   return (
     <AtmosphereEffect
       planetOrigin={planet.rootGroup.position}
