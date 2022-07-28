@@ -3,7 +3,7 @@ import { TriangleMesh } from "./Sphere.thing";
 
 let _randomLat = [],
   _randomLon = [];
-function generateFibonacciSphere(N, jitter, randFloat) {
+export function generateFibonacciSphere(N, jitter, randFloat) {
   let a_latlong = [];
 
   // Second algorithm from http://web.archive.org/web/20120421191837/http://www.cgafaq.info/wiki/Evenly_distributed_points_on_sphere
@@ -29,9 +29,35 @@ function generateFibonacciSphere(N, jitter, randFloat) {
   return a_latlong;
 }
 
+export function generateFibonacciSphereAlt(N, jitter, randFloat) {
+  let a_latlong = [];
+
+  // Second algorithm from http://web.archive.org/web/20120421191837/http://www.cgafaq.info/wiki/Evenly_distributed_points_on_sphere
+  const s = 3.6 / Math.sqrt(N);
+  const dlong = Math.PI * (3 - Math.sqrt(5)); /* ~2.39996323 */
+  const dz = 2.0 / N;
+  for (let k = 0, long = 0, z = 1 - dz / 2; k !== N; k++, z -= dz) {
+    let r = Math.sqrt(1 - z * z);
+    let latDeg = (Math.asin(z) * 180) / Math.PI;
+    let lonDeg = (long * 180) / Math.PI;
+    if (_randomLat[k] === undefined) _randomLat[k] = randFloat() - randFloat();
+    if (_randomLon[k] === undefined) _randomLon[k] = randFloat() - randFloat();
+    latDeg +=
+      jitter *
+      _randomLat[k] *
+      (latDeg -
+        (Math.asin(Math.max(-1, z - (dz * 2 * Math.PI * r) / s)) * 180) /
+          Math.PI);
+    lonDeg += jitter * _randomLon[k] * (((s / r) * 180) / Math.PI);
+    a_latlong.push([lonDeg % 360.0, latDeg]);
+    long += dlong;
+  }
+  return a_latlong;
+}
+
 /* calculate x,y,z from spherical coordinates lat,lon and then push
  * them onto out array; for one-offs pass [] as the first argument */
-function pushCartesianFromSpherical(out, latDeg, lonDeg) {
+export function pushCartesianFromSpherical(out, latDeg, lonDeg) {
   let latRad = (latDeg / 180.0) * Math.PI,
     lonRad = (lonDeg / 180.0) * Math.PI;
   out.push(
@@ -139,6 +165,19 @@ export function makeSphere(N, jitter, randFloat) {
     dummy_r_vertex[i] = dummy_r_vertex[0];
   }
 
+  const regionVertexMap = [];
+
+  for (let r = 0; r < r_xyz.length; r += 3) {
+    const x = r_xyz[r] * 3;
+    const y = r_xyz[r + 1] * 3;
+    const z = r_xyz[r + 2] * 3;
+    regionVertexMap[r / 3] = {
+      x,
+      y,
+      z,
+    };
+  }
+
   let mesh = new TriangleMesh({
     numBoundaryRegions: 0,
     numSolidSides: delaunay.triangles.length,
@@ -146,6 +185,8 @@ export function makeSphere(N, jitter, randFloat) {
     _triangles: delaunay.triangles,
     _halfedges: delaunay.halfedges,
   });
+
+  mesh.update(regionVertexMap, delaunay);
 
   return { mesh, r_xyz };
 }

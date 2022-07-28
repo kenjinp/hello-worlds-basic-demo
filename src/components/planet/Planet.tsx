@@ -12,8 +12,9 @@ import {
   PointsMaterial,
   Vector3,
 } from "three";
+import { Planet as D3Planet } from "./Planet.d3";
 import { makeSphere } from "./Planet.geometry.js";
-
+import { randomColor } from "./Planet.utils";
 const Planet: React.FC = () => {
   const planet = useControls("planet", {
     planetRadius: {
@@ -90,7 +91,10 @@ const Planet: React.FC = () => {
           let inner_t = mesh.s_inner_t(s),
             outer_t = mesh.s_outer_t(s),
             begin_r = mesh.s_begin_r(s);
-          let rgb = r_color_fn(begin_r);
+
+          const whatever = mesh.s_begin_r(s);
+
+          let rgb = randomColor(whatever)!;
           xyz.push(
             t_xyz[3 * inner_t],
             t_xyz[3 * inner_t + 1],
@@ -115,12 +119,12 @@ const Planet: React.FC = () => {
 
       console.log({
         result,
+        map,
         voronoi: v,
+        // regionVertexMap,
       });
       const geometry = new BufferGeometry();
       const vertices = new Float32Array(v.xyz);
-
-      // itemSize = 3 because there are 3 values (components) per vertex
       geometry.setAttribute("position", new BufferAttribute(vertices, 3));
       geometry.setAttribute("color", new Float32BufferAttribute(v.colors, 3));
       meshRef.current.geometry = geometry;
@@ -158,6 +162,7 @@ const Planet: React.FC = () => {
           )
         }
       >
+        <D3Planet />
         {/* <sphereBufferGeometry  */}
         {/* <sphereGeometry args={[planet.planetRadius, 32, 16]}></sphereGeometry> */}
         <meshBasicMaterial vertexColors side={DoubleSide} />
