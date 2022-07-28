@@ -14,9 +14,10 @@ import {
 } from "three";
 import { cartesianToPolar } from "./Planet.cartesian";
 // import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry";
+import earcut from "earcut";
+import { find } from "./geo/find";
 import { polarToCartesian } from "./Planet.cartesian";
 import { generateFibonacciSphereAlt } from "./Planet.geometry.js";
-
 export const Planet: React.FC = () => {
   const planet = useControls("planet", {
     planetRadius: {
@@ -43,6 +44,7 @@ export const Planet: React.FC = () => {
   const [target, setTarget] = React.useState(new Vector3());
   const geoRef = React.useRef<any>(null);
   const pointsRef = React.useRef<BufferGeometry>(null);
+  const [selected, setSelected] = React.useState<number>();
 
   React.useEffect(() => {
     if (meshRef.current) {
@@ -59,11 +61,10 @@ export const Planet: React.FC = () => {
       console.log({ polygons });
       const tmpColor = new Color(0xffffff);
       const values = polygons.features.reduce(
-        (memo, entry) => {
+        (memo, entry, index) => {
           console.log({ feature: entry });
           const featureColor = tmpColor.setHex(Math.random() * 0xffffff);
           const [lon, lat] = entry.properties.site;
-          // pushCartesianFromSpherical(memo.points, lat, long);
           const { x, y, z } = polarToCartesian(lat, lon, planet.planetRadius);
 
           memo.points.push(x, y, z);
@@ -72,6 +73,37 @@ export const Planet: React.FC = () => {
             featureColor.g,
             featureColor.b
           );
+
+          // const vals = makePolygon(
+          //   entry.geometry.coordinates,
+          //   planet.planetRadius
+          // );
+
+          console.log({
+            coords: entry.geometry.coordinates[0],
+          });
+
+          const verts = entry.geometry.coordinates[0]
+            .map(([long, lat]) =>
+              polarToCartesian(lat, long, planet.planetRadius)
+            )
+            .map(({ x, y, z }) => [x, y, z])
+            .reduce((memo, entry) => {
+              memo.push(...entry);
+              return memo;
+            }, []);
+
+          const triangles = earcut(verts, null, 3);
+
+          const dedupedVerts = verts.reduce((memo, entry) => {
+            if (!memo.includes(entry)) {
+              memo.push(entry);
+            }
+            return memo;
+          }, []);
+
+          console.log({ verts, dedupedVerts, triangles });
+
           // we need a triangle made of 3 points
           // this entry
           // this entry + 1
@@ -138,14 +170,14 @@ export const Planet: React.FC = () => {
         }
       );
 
-      // meshRef.current.geometry.setAttribute(
-      //   "position",
-      //   new Float32BufferAttribute(values.verts, 3)
-      // );
-      // meshRef.current.geometry.setAttribute(
-      //   "color",
-      //   new Float32BufferAttribute(values.vertColors, 3)
-      // );
+      meshRef.current.geometry.setAttribute(
+        "position",
+        new Float32BufferAttribute(values.polygonVerts, 3)
+      );
+      meshRef.current.geometry.setAttribute(
+        "color",
+        new Float32BufferAttribute(values.polygonColors, 3)
+      );
 
       if (pointsRef.current) {
         pointsRef.current.setAttribute(
@@ -165,12 +197,14 @@ export const Planet: React.FC = () => {
         mesh: geo()(latlong).mesh(),
         poly: geo()(latlong).polygons(),
         values,
+        latlong,
       });
       geoRef.current = {
         polygons,
-        geo,
+        geo: geo()(latlong),
         d3: d3.geoDelaunay(latlong),
         values,
+        latlong,
       };
     }
   }, [meshRef, planet, pointsRef]);
@@ -182,21 +216,39 @@ export const Planet: React.FC = () => {
     camera.lookAt(new Vector3(0, 0, 0));
   }, [planet.planetRadius]);
 
-  // const handlePointer = (e) => {
-  //   e.ray.intersectSphere(sphere, target);
-  //   const intersection = target.multiplyScalar(planet.planetRadius).clone();
-  //   setTarget(intersection);
-  //   if (geoRef.current) {
-  //     const [lat, long] = vector3toLonLat(intersection);
-  //     console.log(geoRef.current.geo.find(lat, long));
-  //   }
-  // };
+  const handlePointer = (e) => {
+    e.ray.intersectSphere(sphere, target);
+    const intersection = target.clone();
+    console.log("click", intersection, target);
+    setTarget(intersection);
+    if (geoRef.current) {
+      const [long, lat] = cartesianToPolar(intersection);
+
+      const kennyFind = find(
+        geoRef.current.d3.neighbors,
+        geoRef.current.latlong,
+        planet.planetRadius
+      )(long, lat);
+
+      const geo = geoRef.current.geo.find(long, lat);
+      const d3delany = geoRef.current.d3.find(long, lat);
+      console.log({ geo, d3delany, kennyFind });
+
+      setSelected(kennyFind);
+    }
+  };
+
+  const selectedPosition = new Vector3();
+  if (selected) {
+    const [long, lat] =
+      geoRef.current.polygons.features[selected].properties.site;
+    selectedPosition.copy(polarToCartesian(lat, long, planet.planetRadius));
+  }
 
   return (
     <group>
       <mesh
         frustumCulled={false}
-        ref={meshRef}
         // scale={
         //   new Vector3(
         //     planet.planetRadius,
@@ -204,8 +256,20 @@ export const Planet: React.FC = () => {
         //     planet.planetRadius
         //   )
         // }
-        // onClick={handlePointer}
       >
+        <mesh
+          scale={
+            new Vector3(
+              planet.planetRadius,
+              planet.planetRadius,
+              planet.planetRadius
+            )
+          }
+          onClick={handlePointer}
+        >
+          <sphereGeometry></sphereGeometry>
+          <meshBasicMaterial color="green" visible={false} />
+        </mesh>
         <Html>
           <p>target longlat: {cartesianToPolar(target).join(" ,")}</p>
           <p>radius: {sphere?.radius}</p>
@@ -215,11 +279,25 @@ export const Planet: React.FC = () => {
           <pointsMaterial size={planet.pointsSize} vertexColors />
           <bufferGeometry ref={pointsRef} />
         </points>
-        <bufferGeometry />
-        {/* <sphereGeometry /> */}
-        {/* <sphereBufferGeometry  */}
-        {/* <sphereGeometry args={[planet.planetRadius, 32, 16]}></sphereGeometry> */}
-        <meshBasicMaterial side={DoubleSide} wireframe />
+
+        {Number.isFinite(selected) && (
+          <mesh scale={new Vector3(500, 500, 500)} position={selectedPosition}>
+            <sphereGeometry />
+            <meshBasicMaterial color="pink" />
+          </mesh>
+        )}
+
+        <mesh scale={new Vector3(500, 500, 500)} position={target}>
+          <sphereGeometry />
+          <meshBasicMaterial color="blue" />
+        </mesh>
+        <mesh ref={meshRef}>
+          <bufferGeometry />
+          {/* <sphereGeometry /> */}
+          {/* <sphereBufferGeometry  */}
+          {/* <sphereGeometry args={[planet.planetRadius, 32, 16]}></sphereGeometry> */}
+          <meshBasicMaterial side={DoubleSide} vertexColors />
+        </mesh>
       </mesh>
     </group>
   );

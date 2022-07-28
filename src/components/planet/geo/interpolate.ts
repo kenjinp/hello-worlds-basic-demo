@@ -1,6 +1,6 @@
 import { geoDistance, geoInterpolate } from "d3-geo";
 
-const interpolateLine = (lineCoords = [], maxDegDistance = 1) => {
+const interpolateLine = (lineCoords = [], maxDegDistance = 5) => {
   const result = [];
 
   let prevPnt = null;
@@ -21,6 +21,8 @@ const interpolateLine = (lineCoords = [], maxDegDistance = 1) => {
 
     result.push((prevPnt = pnt));
   });
+
+  console.log({ lineCoords, result });
 
   return result;
 };

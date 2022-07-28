@@ -154,7 +154,7 @@ export function polarToCartesian(
 }
 
 /**
- * Convert [x,y,z] cartesian coordinates to polar [lat,lon]
+ * Convert [x,y,z] cartesian coordinates to polar [lon, lat]
  * @param {Vector3} coord
  * @return {Array<Number>}
  */

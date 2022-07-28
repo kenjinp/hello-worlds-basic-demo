@@ -1,17 +1,20 @@
 import earcut from "earcut";
 import { polarToCartesian } from "../Planet.cartesian";
-
 import interpolateLine from "./interpolate";
 
-export function genPolygon(coords, radius: number) {
+export function makePolygon(coords, radius: number) {
   const coords3d = coords.map((coordsSegment) =>
     interpolateLine(coordsSegment).map(([lng, lat]) =>
       polarToCartesian(lat, lng, radius)
     )
   );
 
+  console.log({ coords3d });
+
   // Each point generates 3 vertice items (x,y,z).
   const { vertices, holes } = earcut.flatten(coords3d);
+
+  console.log({ vertices, holes });
 
   const firstHoleIdx = holes[0] || Infinity;
   const outerVertices = vertices.slice(0, firstHoleIdx * 3);
