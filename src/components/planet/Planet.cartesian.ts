@@ -159,7 +159,7 @@ export function polarToCartesian(
  * @return {Array<Number>}
  */
 export function cartesianToPolar(coord: Vector3) {
-  const lon = Math.atan2(coord.x, -coord.z) * RAD2DEG;
+  const lon = Math.atan2(coord.x, coord.z) * RAD2DEG;
   const length = Math.sqrt(coord.x * coord.x + coord.z * coord.z);
   const lat = Math.atan2(coord.y, length) * RAD2DEG;
 
