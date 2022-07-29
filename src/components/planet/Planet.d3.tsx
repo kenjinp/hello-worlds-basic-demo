@@ -102,14 +102,15 @@ export const Planet: React.FC = () => {
       const colors = [];
       const tempVec = new Vector3();
       const plainColor = new Color();
+      let lastNode = 0;
       for (let i = 0; i < positions!.array.length; i += 3) {
         const x = positions.array[i];
         const y = positions.array[i + 1];
         const z = positions.array[i + 2];
 
         tempVec.set(x, y, z).multiplyScalar(planet.planetRadius);
-        const closestFeature = getClosest.findFromCartesian(tempVec);
-
+        const closestFeature = getClosest.findFromCartesian(tempVec, lastNode);
+        lastNode = closestFeature;
         // const feat = polygons.features[closestFeature];
         const color = colorMap[closestFeature];
         if (color) {
@@ -119,7 +120,6 @@ export const Planet: React.FC = () => {
         }
       }
 
-      console.log(colorMap);
       sphereRef.current.geometry.setAttribute(
         "color",
         new Float32BufferAttribute(colors, 3)
