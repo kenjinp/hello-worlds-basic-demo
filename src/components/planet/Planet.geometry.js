@@ -131,7 +131,7 @@ function addSouthPoleToMesh(southPoleId, { triangles, halfedges }) {
   };
 }
 
-function stereographicProjection(r_xyz) {
+export function stereographicProjection(r_xyz) {
   // See <https://en.wikipedia.org/wiki/Stereographic_projection>
   const degToRad = Math.PI / 180;
   let numPoints = r_xyz.length / 3;

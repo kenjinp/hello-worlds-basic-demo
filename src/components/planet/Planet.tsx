@@ -15,7 +15,8 @@ import {
 import { Planet as D3Planet } from "./Planet.d3";
 import { makeSphere } from "./Planet.geometry.js";
 import { randomColor } from "./Planet.utils";
-const Planet: React.FC = () => {
+
+export const Planet: React.FC = () => {
   const planet = useControls("planet", {
     planetRadius: {
       min: 100,
@@ -170,5 +171,3 @@ const Planet: React.FC = () => {
     </group>
   );
 };
-
-export default Planet;

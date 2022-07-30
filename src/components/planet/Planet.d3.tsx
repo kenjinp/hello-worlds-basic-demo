@@ -1,4 +1,3 @@
-import { Html } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as d3 from "d3-geo-voronoi";
 import { useControls } from "leva";
@@ -9,14 +8,21 @@ import {
   DoubleSide,
   Float32BufferAttribute,
   Mesh,
+  MeshBasicMaterial,
   Sphere,
+  SphereGeometry,
   Vector3,
 } from "three";
-import { cartesianToPolar } from "./Planet.cartesian";
-// import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry";
+import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry";
 import { find } from "./geo/find";
-import { polarToCartesian } from "./Planet.cartesian";
+import { cartesianToPolar, polarToCartesian } from "./Planet.cartesian";
 import { generateFibonacciSphereAlt } from "./Planet.geometry.js";
+
+const neighborMaterial = new MeshBasicMaterial({ color: "green" });
+const neighborGeo = new SphereGeometry(500, 16, 16);
+
+const tempHull = new ConvexGeometry([]);
+
 export const Planet: React.FC = () => {
   const planet = useControls("planet", {
     planetRadius: {
@@ -50,27 +56,33 @@ export const Planet: React.FC = () => {
     if (meshRef.current && sphereRef.current) {
       setSphere(new Sphere(meshRef.current.position, planet.planetRadius));
 
-      const latlong = generateFibonacciSphereAlt(
+      const longlat = generateFibonacciSphereAlt(
         planet.numberPoints,
         planet.jitter,
         Math.random
       );
 
-      const geo = d3.geoVoronoi(latlong);
-      const d3Stuff = d3.geoDelaunay(latlong);
-      const polygons = geo.polygons(latlong);
+      const geo = d3.geoVoronoi(longlat);
+      const d3Stuff = d3.geoDelaunay(longlat);
+      const polygons = geo.polygons(longlat);
       const tmpColor = new Color(0xffffff);
 
-      const getClosest = find(d3Stuff.neighbors, latlong, planet.planetRadius);
+      const getClosest = find(d3Stuff.neighbors, longlat, planet.planetRadius);
       const colorMap: Color[] = [];
 
       const values = polygons.features.reduce(
         (memo, entry, index) => {
           // console.log({ feature: entry });
-          const featureColor = tmpColor.setHex(Math.random() * 0xffffff);
-          colorMap[index] = featureColor.clone();
+
           const [lon, lat] = entry.properties.site;
-          const { x, y, z } = polarToCartesian(lat, lon, planet.planetRadius);
+          const vec3 = polarToCartesian(lat, lon, planet.planetRadius);
+          const { x, y, z } = vec3;
+          const featureColor = tmpColor
+            .setHex(Math.random() * 0xffffff)
+            .clone();
+          const { x: r, y: g, z: b } = vec3.clone().normalize().addScalar(0.5);
+          const xyzColor = tmpColor.setRGB(r, g, b);
+          colorMap[index] = xyzColor.clone().lerp(featureColor, 0.25);
 
           memo.points.push(x, y, z);
           memo.pointsColors.push(
@@ -78,6 +90,37 @@ export const Planet: React.FC = () => {
             featureColor.g,
             featureColor.b
           );
+
+          const coords3d = entry.geometry.coordinates
+            .map((coordsSegment) =>
+              coordsSegment.map(([lng, lat]) =>
+                polarToCartesian(lat, lng, planet.planetRadius)
+              )
+            )[0]
+            .reduce((memo, { x, y, z }) => {
+              memo.push(x, y, z);
+              return memo;
+            }, []);
+
+          const points = [];
+          for (let i = 0; i < coords3d.length; i += 3) {
+            const x = coords3d[i];
+            const y = coords3d[i + 1];
+            const z = coords3d[i + 2];
+            points.push(new Vector3(x, y, z));
+          }
+          const hull = new ConvexGeometry(points);
+
+          const xyz = Array.from(hull.getAttribute("position").array);
+          for (let i = 0; i < xyz.length; i += 3) {
+            memo.polygonColors.push(
+              featureColor.r,
+              featureColor.g,
+              featureColor.b
+            );
+          }
+
+          memo.polygonVerts.push(...xyz);
 
           return memo;
         },
@@ -89,14 +132,14 @@ export const Planet: React.FC = () => {
         }
       );
 
-      // meshRef.current.geometry.setAttribute(
-      //   "position",
-      //   new Float32BufferAttribute(values.polygonVerts, 3)
-      // );
-      // meshRef.current.geometry.setAttribute(
-      //   "color",
-      //   new Float32BufferAttribute(values.polygonColors, 3)
-      // );
+      meshRef.current.geometry.setAttribute(
+        "position",
+        new Float32BufferAttribute(values.polygonVerts, 3)
+      );
+      meshRef.current.geometry.setAttribute(
+        "color",
+        new Float32BufferAttribute(values.polygonColors, 3)
+      );
 
       const positions = sphereRef.current?.geometry.getAttribute("position");
       const colors = [];
@@ -138,11 +181,13 @@ export const Planet: React.FC = () => {
 
       geoRef.current = {
         polygons,
-        geo: geo()(latlong),
+        geo: geo()(longlat),
         d3: d3Stuff,
         values,
-        latlong,
+        longlat,
         colorMap,
+        getClosest,
+        neighbors: d3Stuff.neighbors,
       };
 
       console.log(geoRef.current);
@@ -159,20 +204,48 @@ export const Planet: React.FC = () => {
   const handlePointer = (e) => {
     e.ray.intersectSphere(sphere, target);
     const intersection = target.clone();
-    console.log("click", intersection, target);
     setTarget(intersection);
     if (geoRef.current) {
       const [long, lat] = cartesianToPolar(intersection);
 
       const selection = find(
         geoRef.current.d3.neighbors,
-        geoRef.current.latlong,
+        geoRef.current.longlat,
         planet.planetRadius
       ).findFromPolar(long, lat);
 
       setSelected(selection);
     }
   };
+
+  // React.useEffect(() => {
+  //   meshRef.current?.children.forEach((child) => {
+  //     // if (child.userData.type === "neighbor") {
+  //     // }
+  //     child.removeFromParent();
+  //   });
+
+  //   if (geoRef.current) {
+  //     if (selected) {
+  //       const neighbors = geoRef.current.neighbors[selected];
+  //       if (neighbors) {
+  //         neighbors.forEach((id: number) => {
+  //           const neighborMesh = new Mesh(neighborGeo, neighborMaterial);
+  //           const getPositionFromIndex = (index: number): Vector3 => {
+  //             const [long, lat] =
+  //               geoRef.current.polygons.features[index].properties.site;
+  //             return polarToCartesian(lat, long, planet.planetRadius);
+  //           };
+  //           neighborMesh.position.copy(getPositionFromIndex(id));
+  //           neighborMesh.userData = {
+  //             type: "neighbor",
+  //           };
+  //           meshRef.current?.add(neighborMesh);
+  //         });
+  //       }
+  //     }
+  //   }
+  // }, [selected, meshRef, geoRef]);
 
   const selectedPosition = new Vector3();
   if (selected) {
@@ -205,13 +278,8 @@ export const Planet: React.FC = () => {
           onClick={handlePointer}
         >
           <icosahedronGeometry args={[1, 80]} />
-          <meshBasicMaterial vertexColors />
+          <meshBasicMaterial vertexColors visible={false} />
         </mesh>
-        <Html>
-          <p>target longlat: {cartesianToPolar(target).join(" ,")}</p>
-          <p>radius: {sphere?.radius}</p>
-          <p>target xyz: {[target.x, target.y, target.z].join(", ")}</p>
-        </Html>
         <points>
           <pointsMaterial size={planet.pointsSize} vertexColors />
           <bufferGeometry ref={pointsRef} />

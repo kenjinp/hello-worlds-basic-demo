@@ -88,7 +88,12 @@ export class TriangleMesh {
    */
   _update() {
     let { _triangles, _halfedges, _r_vertex, _t_vertex } = this;
-
+    console.log({
+      _triangles,
+      _halfedges,
+      _r_vertex,
+      _t_vertex,
+    });
     this.numSides = _triangles.length;
     this.numRegions = _r_vertex.length;
     this.numSolidRegions = this.numRegions - 1; // TODO: only if there are ghosts
