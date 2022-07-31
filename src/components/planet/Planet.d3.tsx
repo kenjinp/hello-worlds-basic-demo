@@ -21,8 +21,6 @@ import { generateFibonacciSphereAlt } from "./Planet.geometry.js";
 const neighborMaterial = new MeshBasicMaterial({ color: "green" });
 const neighborGeo = new SphereGeometry(500, 16, 16);
 
-const tempHull = new ConvexGeometry([]);
-
 export const Planet: React.FC = () => {
   const planet = useControls("planet", {
     planetRadius: {
@@ -37,7 +35,12 @@ export const Planet: React.FC = () => {
       value: 1.0,
       step: 0.01,
     },
-    numberPoints: 1000,
+    numberPoints: {
+      min: 32,
+      max: 50_000,
+      value: 10_000,
+      step: 10,
+    },
     pointsColor: "#ff69b4",
     pointsSize: 100,
   });
@@ -66,116 +69,103 @@ export const Planet: React.FC = () => {
       const d3Stuff = d3.geoDelaunay(longlat);
       const polygons = geo.polygons(longlat);
       const tmpColor = new Color(0xffffff);
+      const tempVector3 = new Vector3();
 
       const getClosest = find(d3Stuff.neighbors, longlat, planet.planetRadius);
       const colorMap: Color[] = [];
 
-      const values = polygons.features.reduce(
-        (memo, entry, index) => {
-          // console.log({ feature: entry });
+      const points = [];
+      const polygonVerts = [];
+      const pointsColors = [];
+      const polygonColors = [];
 
-          const [lon, lat] = entry.properties.site;
-          const vec3 = polarToCartesian(lat, lon, planet.planetRadius);
-          const { x, y, z } = vec3;
-          const featureColor = tmpColor
-            .setHex(Math.random() * 0xffffff)
-            .clone();
-          const { x: r, y: g, z: b } = vec3.clone().normalize().addScalar(0.5);
-          const xyzColor = tmpColor.setRGB(r, g, b);
-          colorMap[index] = xyzColor.clone().lerp(featureColor, 0.25);
+      for (let i = 0; i < polygons.features.length; i++) {
+        const feature = polygons.features[i];
 
-          memo.points.push(x, y, z);
-          memo.pointsColors.push(
-            featureColor.r,
-            featureColor.g,
-            featureColor.b
-          );
+        const [lon, lat] = feature.properties.site;
+        const vec3 = polarToCartesian(lat, lon, planet.planetRadius);
+        const { x, y, z } = vec3;
+        const featureColor = tmpColor.setHex(Math.random() * 0xffffff).clone();
+        const { x: r, y: g, z: b } = vec3.clone().normalize().addScalar(0.5);
+        const xyzColor = tmpColor.setRGB(r, g, b);
+        colorMap[i] = xyzColor.clone().lerp(featureColor, 0.25);
 
-          const coords3d = entry.geometry.coordinates
-            .map((coordsSegment) =>
-              coordsSegment.map(([lng, lat]) =>
-                polarToCartesian(lat, lng, planet.planetRadius)
-              )
-            )[0]
-            .reduce((memo, { x, y, z }) => {
-              memo.push(x, y, z);
-              return memo;
-            }, []);
+        points.push(x, y, z);
+        pointsColors.push(featureColor.r, featureColor.g, featureColor.b);
 
-          const points = [];
-          for (let i = 0; i < coords3d.length; i += 3) {
-            const x = coords3d[i];
-            const y = coords3d[i + 1];
-            const z = coords3d[i + 2];
-            points.push(new Vector3(x, y, z));
-          }
-          const hull = new ConvexGeometry(points);
+        const coords3d = feature.geometry.coordinates
+          .map((coordsSegment) =>
+            coordsSegment.map(([lng, lat]) =>
+              polarToCartesian(lat, lng, planet.planetRadius)
+            )
+          )[0]
+          .reduce((memo, { x, y, z }) => {
+            memo.push(x, y, z);
+            return memo;
+          }, []);
 
-          const xyz = Array.from(hull.getAttribute("position").array);
-          for (let i = 0; i < xyz.length; i += 3) {
-            memo.polygonColors.push(
-              featureColor.r,
-              featureColor.g,
-              featureColor.b
-            );
-          }
-
-          memo.polygonVerts.push(...xyz);
-
-          return memo;
-        },
-        {
-          points: [],
-          polygonVerts: [],
-          pointsColors: [],
-          polygonColors: [],
+        const polygonPoints = [];
+        for (let i = 0; i < coords3d.length; i += 3) {
+          const x = coords3d[i];
+          const y = coords3d[i + 1];
+          const z = coords3d[i + 2];
+          polygonPoints.push(tempVector3.set(x, y, z).clone());
         }
-      );
+        const hull = new ConvexGeometry(polygonPoints);
+
+        const xyz = Array.from(hull.getAttribute("position").array);
+        for (let i = 0; i < xyz.length; i += 3) {
+          polygonColors.push(featureColor.r, featureColor.g, featureColor.b);
+        }
+
+        polygonVerts.push(...xyz);
+      }
 
       meshRef.current.geometry.setAttribute(
         "position",
-        new Float32BufferAttribute(values.polygonVerts, 3)
+        new Float32BufferAttribute(polygonVerts, 3)
       );
       meshRef.current.geometry.setAttribute(
         "color",
-        new Float32BufferAttribute(values.polygonColors, 3)
+        new Float32BufferAttribute(polygonColors, 3)
       );
 
-      const positions = sphereRef.current?.geometry.getAttribute("position");
-      const colors = [];
-      const tempVec = new Vector3();
-      const plainColor = new Color();
-      let lastNode = 0;
-      for (let i = 0; i < positions!.array.length; i += 3) {
-        const x = positions.array[i];
-        const y = positions.array[i + 1];
-        const z = positions.array[i + 2];
+      // const positions = sphereRef.current?.geometry.getAttribute("position");
+      // const colors = [];
+      // let lastNode = 0;
+      // for (let i = 0; i < positions!.array.length; i += 3) {
+      //   const x = positions.array[i];
+      //   const y = positions.array[i + 1];
+      //   const z = positions.array[i + 2];
 
-        tempVec.set(x, y, z).multiplyScalar(planet.planetRadius);
-        const closestFeature = getClosest.findFromCartesian(tempVec, lastNode);
-        lastNode = closestFeature;
-        // const feat = polygons.features[closestFeature];
-        const color = colorMap[closestFeature];
-        if (color) {
-          colors.push(color.r, color.g, color.b);
-        } else {
-          colors.push(plainColor.r, plainColor.g, plainColor.b);
-        }
-      }
+      //   tempVector3.set(x, y, z).multiplyScalar(planet.planetRadius);
+      //   const closestFeature = getClosest.findFromCartesian(
+      //     tempVector3,
+      //     lastNode
+      //   );
+      //   lastNode = closestFeature;
+      //   // const feat = polygons.features[closestFeature];
+      //   const color = colorMap[closestFeature];
+      //   if (color) {
+      //     colors.push(color.r, color.g, color.b);
+      //   } else {
+      //     colors.push(plainColor.r, plainColor.g, plainColor.b);
+      //   }
+      // }
 
-      sphereRef.current.geometry.setAttribute(
-        "color",
-        new Float32BufferAttribute(colors, 3)
-      );
+      // sphereRef.current.geometry.setAttribute(
+      //   "color",
+      //   new Float32BufferAttribute(colors, 3)
+      // );
 
       if (pointsRef.current) {
         pointsRef.current.setAttribute(
           "position",
-          new Float32BufferAttribute(values.points, 3)
+          new Float32BufferAttribute(points, 3)
         );
         pointsRef.current.setAttribute(
           "color",
-          new Float32BufferAttribute(values.pointsColors, 3)
+          new Float32BufferAttribute(pointsColors, 3)
         );
       }
 
@@ -183,7 +173,6 @@ export const Planet: React.FC = () => {
         polygons,
         geo: geo()(longlat),
         d3: d3Stuff,
-        values,
         longlat,
         colorMap,
         getClosest,
@@ -193,6 +182,11 @@ export const Planet: React.FC = () => {
       console.log(geoRef.current);
     }
   }, [meshRef, planet, pointsRef, sphereRef]);
+
+  const changeSelectedPolygonColor = (selectedIndex: number) => {
+    geoRef.current.polygons.features[selectedIndex];
+    const colorAttribute = meshRef.current.geometry.getAttribute("color");
+  };
 
   React.useEffect(() => {
     camera.position.copy(
