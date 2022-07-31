@@ -45,7 +45,7 @@ export const Planet: React.FC = () => {
   const sphereRef = React.useRef<Mesh>(null);
 
   const [voronoi, setVoronoi] = React.useState(() =>
-    VoronoiSphere.createFromFibbonacciSphere(
+    VoronoiSphere.createFromFibonacciSphere(
       planet.numberPoints,
       planet.jitter,
       planet.planetRadius,
@@ -55,7 +55,7 @@ export const Planet: React.FC = () => {
 
   React.useEffect(() => {
     setVoronoi(
-      VoronoiSphere.createFromFibbonacciSphere(
+      VoronoiSphere.createFromFibonacciSphere(
         planet.numberPoints,
         planet.jitter,
         planet.planetRadius,

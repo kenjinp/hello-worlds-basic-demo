@@ -58,7 +58,7 @@ export default class VoronoiSphere {
     };
   }
 
-  static createFromFibbonacciSphere(
+  static createFromFibonacciSphere(
     numberOfPoints: number,
     jitter: number,
     radius: number,
