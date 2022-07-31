@@ -45,7 +45,11 @@ export function fibonacciSphere(
   const s = 3.6 / Math.sqrt(numberOfPoints);
   const dlong = Math.PI * (3 - Math.sqrt(5)); /* ~2.39996323 */
   const dz = 2.0 / numberOfPoints;
-  for (let k = 0, long = 0, z = 1 - dz / 2; k !== N; k++, z -= dz) {
+  for (
+    let k = 0, long = 0, z = 1 - dz / 2;
+    k !== numberOfPoints;
+    k++, z -= dz
+  ) {
     const r = Math.sqrt(1 - z * z);
     let latDeg = (Math.asin(z) * 180) / Math.PI;
     let lonDeg = (long * 180) / Math.PI;

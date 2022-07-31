@@ -2,7 +2,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Vector3 } from "three";
 import BasicScene from "./components/basic-scene/BasicScene";
 import Moon from "./components/moon/Moon";
-import { Planet } from "./components/planet/Planet.d3";
+import { Planet } from "./components/planet/Planet";
 
 export default function App() {
   return (

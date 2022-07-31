@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
 import { ConvexGeometry } from "three/examples/jsm/geometries/ConvexGeometry";
-import { polarToCartesian } from "../Planet.cartesian";
+import { polarToCartesian } from "./math";
 import { GeoFeature, Region } from "./Voronoi";
 
 export const convertFeaturesToRegions = (
@@ -11,6 +11,9 @@ export const convertFeaturesToRegions = (
   const regions: Region[] = [];
   for (let i = 0; i < features.length; i++) {
     const feature = features[i];
+
+    const [lon, lat] = feature.properties.site;
+    const siteXYZ = polarToCartesian(lat, lon, radius);
 
     const polygonVerts = [];
 
@@ -41,6 +44,10 @@ export const convertFeaturesToRegions = (
       geometry: {
         ...feature.geometry,
         vertices: polygonVerts,
+      },
+      properties: {
+        ...feature.properties,
+        siteXYZ,
       },
     });
   }

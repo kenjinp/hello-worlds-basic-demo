@@ -1,4 +1,5 @@
 import * as d3 from "d3-geo-voronoi";
+import { Vector3 } from "three";
 import { find } from "./find";
 import { fibonacciSphere, LongLat } from "./math";
 import { convertFeaturesToRegions } from "./regions";
@@ -26,6 +27,7 @@ export interface Region {
   properties: {
     neighbors: number[];
     site: LongLat;
+    siteXYZ: Vector3;
     sitecoodinates: LongLat;
   };
 }
@@ -42,10 +44,10 @@ export default class VoronoiSphere {
     public readonly radius: number
   ) {
     this.regions = convertFeaturesToRegions(
-      d3.geoVoronoi(this.points).polygons(this.points) as GeoFeature[],
+      d3.geoVoronoi(this.points).polygons(this.points).features as GeoFeature[],
       radius
     );
-    this.neighbors = d3.geoDelaunay(this.points);
+    this.neighbors = d3.geoDelaunay(this.points).neighbors;
   }
 
   get find() {

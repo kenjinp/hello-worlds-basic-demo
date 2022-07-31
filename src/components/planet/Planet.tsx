@@ -2,19 +2,14 @@ import { useThree } from "@react-three/fiber";
 import { useControls } from "leva";
 import * as React from "react";
 import {
-  BufferAttribute,
   BufferGeometry,
   Color,
-  DoubleSide,
   Float32BufferAttribute,
   Mesh,
-  Points,
-  PointsMaterial,
+  Sphere,
   Vector3,
 } from "three";
-import { Planet as D3Planet } from "./Planet.d3";
-import { makeSphere } from "./Planet.geometry.js";
-import { randomColor } from "./Planet.utils";
+import VoronoiSphere from "./voronoi/Voronoi";
 
 export const Planet: React.FC = () => {
   const planet = useControls("planet", {
@@ -24,125 +19,103 @@ export const Planet: React.FC = () => {
       value: 5_000 * 4,
       step: 10,
     },
-    jitter: 1.0,
-    numberPoints: 1000,
+    jitter: {
+      min: -10.0,
+      max: 10.0,
+      value: 1.0,
+      step: 0.01,
+    },
+    numberPoints: {
+      min: 32,
+      max: 50_000,
+      value: 10_000,
+      step: 10,
+    },
+    pointsColor: "#000000",
+    pointsSize: 100,
   });
 
   const { camera } = useThree();
 
   const meshRef = React.useRef<Mesh>(null);
+  const [sphere, setSphere] = React.useState<Sphere | null>(null);
+  const [target, setTarget] = React.useState(new Vector3());
+  const pointsRef = React.useRef<BufferGeometry>(null);
+  const [selected, setSelected] = React.useState<number>();
+  const sphereRef = React.useRef<Mesh>(null);
+
+  const [voronoi, setVoronoi] = React.useState(() =>
+    VoronoiSphere.createFromFibbonacciSphere(
+      planet.numberPoints,
+      planet.jitter,
+      planet.planetRadius,
+      Math.random
+    )
+  );
 
   React.useEffect(() => {
-    if (meshRef.current) {
-      const result = makeSphere(
+    setVoronoi(
+      VoronoiSphere.createFromFibbonacciSphere(
         planet.numberPoints,
         planet.jitter,
+        planet.planetRadius,
         Math.random
-      );
+      )
+    );
+  }, [planet.planetRadius, planet.jitter, planet.numberPoints]);
 
-      const map = {};
-      const mesh = result.mesh;
-      map.r_xyz = result.r_xyz;
-      map.t_xyz = generateTriangleCenters(mesh, map);
+  React.useEffect(() => {
+    if (meshRef.current && sphereRef.current) {
+      setSphere(new Sphere(meshRef.current.position, planet.planetRadius));
 
-      /* Calculate the centroid and push it onto an array */
-      function pushCentroidOfTriangle(out, ax, ay, az, bx, by, bz, cx, cy, cz) {
-        // TODO: renormalize to radius 1
-        out.push((ax + bx + cx) / 3, (ay + by + cy) / 3, (az + bz + cz) / 3);
-      }
+      const tmpColor = new Color();
+      const pointsColor = new Color().setStyle(planet.pointsColor);
+      const regions = voronoi.regions;
 
-      function generateTriangleCenters(mesh, { r_xyz }) {
-        let { numTriangles } = mesh;
-        let t_xyz = [];
-        for (let t = 0; t < numTriangles; t++) {
-          let a = mesh.s_begin_r(3 * t),
-            b = mesh.s_begin_r(3 * t + 1),
-            c = mesh.s_begin_r(3 * t + 2);
-          pushCentroidOfTriangle(
-            t_xyz,
-            r_xyz[3 * a],
-            r_xyz[3 * a + 1],
-            r_xyz[3 * a + 2],
-            r_xyz[3 * b],
-            r_xyz[3 * b + 1],
-            r_xyz[3 * b + 2],
-            r_xyz[3 * c],
-            r_xyz[3 * c + 1],
-            r_xyz[3 * c + 2]
-          );
+      const points = [];
+      const pointsColors = [];
+      const regionColors = [];
+      const regionVerts = [];
+
+      for (let i = 0; i < regions.length; i++) {
+        const feature = regions[i];
+
+        const { x, y, z } = feature.properties.siteXYZ;
+        const featureColor = tmpColor.setHex(Math.random() * 0xffffff).clone();
+
+        points.push(x, y, z);
+        pointsColors.push(pointsColor.r, pointsColor.g, pointsColor.b);
+
+        regionVerts.push(...feature.geometry.vertices);
+
+        for (let c = 0; c < feature.geometry.vertices.length; c += 3) {
+          regionColors.push(featureColor.r, featureColor.g, featureColor.b);
         }
-        return t_xyz;
       }
 
-      const tmpColor = new Color(0xffffff);
-
-      function r_color_fn() {
-        // let m = map.r_moisture[r];
-        // let e = map.r_elevation[r];
-        tmpColor.setHex(Math.random() * 0xffffff);
-        return tmpColor;
-      }
-
-      function generateVoronoiGeometry(mesh, { r_xyz, t_xyz }, r_color_fn) {
-        const { numSides } = mesh;
-        let xyz = [],
-          colors = [];
-
-        for (let s = 0; s < numSides; s++) {
-          let inner_t = mesh.s_inner_t(s),
-            outer_t = mesh.s_outer_t(s),
-            begin_r = mesh.s_begin_r(s);
-
-          const whatever = mesh.s_begin_r(s);
-
-          let rgb = randomColor(whatever)!;
-          xyz.push(
-            t_xyz[3 * inner_t],
-            t_xyz[3 * inner_t + 1],
-            t_xyz[3 * inner_t + 2],
-            t_xyz[3 * outer_t],
-            t_xyz[3 * outer_t + 1],
-            t_xyz[3 * outer_t + 2],
-            r_xyz[3 * begin_r],
-            r_xyz[3 * begin_r + 1],
-            r_xyz[3 * begin_r + 2]
-          );
-          colors.push(
-            ...Array(9)
-              .fill(0)
-              .reduce((memo, entry) => [...memo, rgb.r, rgb.g, rgb.b], [])
-          );
-        }
-        return { xyz, colors };
-      }
-
-      const v = generateVoronoiGeometry(mesh, map, r_color_fn);
-
-      console.log({
-        result,
-        map,
-        voronoi: v,
-        // regionVertexMap,
-      });
-      const geometry = new BufferGeometry();
-      const vertices = new Float32Array(v.xyz);
-      geometry.setAttribute("position", new BufferAttribute(vertices, 3));
-      geometry.setAttribute("color", new Float32BufferAttribute(v.colors, 3));
-      meshRef.current.geometry = geometry;
-
-      const pointGeo = new BufferGeometry();
-      pointGeo.setAttribute(
+      meshRef.current.geometry.setAttribute(
         "position",
-        new Float32BufferAttribute(map.r_xyz, 3)
+        new Float32BufferAttribute(regionVerts, 3)
+      );
+      meshRef.current.geometry.setAttribute(
+        "color",
+        new Float32BufferAttribute(regionColors, 3)
       );
 
-      const pointsMat = new PointsMaterial({ color: 0xffffff });
+      meshRef.current.geometry.computeVertexNormals();
 
-      const points = new Points(pointGeo, pointsMat);
-      pointsMat.size = 100;
-      meshRef.current.add(points);
+      if (pointsRef.current) {
+        pointsRef.current.setAttribute(
+          "position",
+          new Float32BufferAttribute(points, 3)
+        );
+        pointsRef.current.setAttribute(
+          "color",
+          new Float32BufferAttribute(pointsColors, 3)
+        );
+      }
     }
-  }, [meshRef, planet]);
+  }, [meshRef, planet, pointsRef, sphereRef, voronoi]);
 
   React.useEffect(() => {
     camera.position.copy(
@@ -151,22 +124,56 @@ export const Planet: React.FC = () => {
     camera.lookAt(new Vector3(0, 0, 0));
   }, [planet.planetRadius]);
 
+  const handlePointer = (e) => {
+    e.ray.intersectSphere(sphere, target);
+    const intersection = target.clone();
+    setTarget(intersection);
+    const selection = voronoi.find.fromCartesian(intersection);
+    setSelected(selection);
+  };
+
+  const selectedPosition = new Vector3();
+  if (selected) {
+    selectedPosition.copy(voronoi.regions[selected].properties.siteXYZ);
+  }
+
   return (
     <group>
-      <mesh
-        ref={meshRef}
-        scale={
-          new Vector3(
-            planet.planetRadius,
-            planet.planetRadius,
-            planet.planetRadius
-          )
-        }
-      >
-        <D3Planet />
-        {/* <sphereBufferGeometry  */}
-        {/* <sphereGeometry args={[planet.planetRadius, 32, 16]}></sphereGeometry> */}
-        <meshBasicMaterial vertexColors side={DoubleSide} />
+      <mesh frustumCulled={false}>
+        <mesh
+          scale={
+            new Vector3(
+              planet.planetRadius,
+              planet.planetRadius,
+              planet.planetRadius
+            )
+          }
+          ref={sphereRef}
+          onClick={handlePointer}
+        >
+          <icosahedronGeometry args={[1, 80]} />
+          <meshBasicMaterial vertexColors visible={false} />
+        </mesh>
+        <points>
+          <pointsMaterial size={planet.pointsSize} vertexColors />
+          <bufferGeometry ref={pointsRef} />
+        </points>
+
+        {Number.isFinite(selected) && (
+          <mesh scale={new Vector3(500, 500, 500)} position={selectedPosition}>
+            <sphereGeometry />
+            <meshBasicMaterial color="pink" />
+          </mesh>
+        )}
+
+        <mesh scale={new Vector3(500, 500, 500)} position={target}>
+          <sphereGeometry />
+          <meshBasicMaterial color="blue" />
+        </mesh>
+        <mesh ref={meshRef}>
+          <bufferGeometry />
+          <meshStandardMaterial vertexColors />
+        </mesh>
       </mesh>
     </group>
   );
