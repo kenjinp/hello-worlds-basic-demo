@@ -63,12 +63,12 @@ export const TectonicsComponent: React.FC<
       });
     }
     return () => {
-      mesh?.children.forEach((child) => {
-        child.removeFromParent();
+      mesh?.traverse((child) => {
         (child as Mesh).geometry.deleteAttribute("color");
         (child as Mesh).geometry.deleteAttribute("position");
         (child as Mesh).geometry.dispose();
       });
+      mesh?.children.forEach((child) => child.removeFromParent());
     };
   }, [tectonics, meshRef]);
 
