@@ -27,7 +27,7 @@ export const PlateLabel: React.FC<{
         return null;
       }}
       style={{
-        transition: "all 0.5s ease-out",
+        transition: "all 0.25s ease-out",
         opacity: hidden ? 0 : 1,
         transform: `scale(${hidden ? 0.5 : 1})`,
       }}
@@ -56,7 +56,9 @@ export const PlateLabels: React.FC<{
   const tectonics = useTectonics();
   const labels = React.useMemo(() => {
     return Array.from(tectonics.plates.values()).map((plate) => {
-      return <PlateLabel plate={plate} occludeRef={occludeRef} />;
+      return (
+        <PlateLabel key={plate.name} plate={plate} occludeRef={occludeRef} />
+      );
     });
   }, [occludeRef, tectonics]);
   return <>{labels}</>;
