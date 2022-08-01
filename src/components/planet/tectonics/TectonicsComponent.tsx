@@ -3,7 +3,6 @@ import * as React from "react";
 import {
   BufferGeometry,
   Float32BufferAttribute,
-  Group,
   Mesh,
   MeshBasicMaterial,
 } from "three";
@@ -21,16 +20,11 @@ export const TectonicsComponent: React.FC<{
 
   const [mat] = React.useState(new MeshBasicMaterial({ vertexColors: true }));
 
-  const meshRef = React.useRef<Group>(null);
+  const meshRef = React.useRef<Mesh>(null);
 
   React.useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
+    const mesh = meshRef.current;
+    if (mesh) {
       tectonics.plates.forEach((plate) => {
         const geo = new BufferGeometry();
         const mesh = new Mesh(geo, mat);
@@ -58,40 +52,43 @@ export const TectonicsComponent: React.FC<{
       });
     }
     return () => {
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
-      meshRef.current?.children.forEach((child) => child.removeFromParent());
+      mesh?.children.forEach((child) => {
+        child.removeFromParent();
+        (child as Mesh).geometry.deleteAttribute("color");
+        (child as Mesh).geometry.deleteAttribute("position");
+        (child as Mesh).geometry.dispose();
+      });
     };
   }, [tectonics, meshRef]);
 
+  const labels = React.useMemo(() => {
+    return Array.from(tectonics.plates.values()).map((plate) => {
+      return (
+        <Html
+          position={plate.startRegion.properties.siteXYZ}
+          occlude={[meshRef]}
+        >
+          <div
+            style={{
+              padding: "0.5em",
+              borderRadius: "4px",
+              background: "black",
+              minWidth: "60px",
+              color: `#${plate.color.getHexString()}`,
+              boxShadow: `1px 0px 7px black`,
+            }}
+          >
+            <span>{plate.name}</span>
+          </div>
+        </Html>
+      );
+    });
+  }, [tectonics]);
+
   return (
     <>
-      <group>
-        {Array.from(tectonics.plates.values()).map((plate) => {
-          return (
-            <Html
-              position={plate.startRegion.properties.siteXYZ}
-              occlude={[meshRef]}
-            >
-              <div
-                style={{
-                  padding: "0.5em",
-                  borderRadius: "4px",
-                  background: "black",
-                  minWidth: "60px",
-                  color: `#${plate.color.getHexString()}`,
-                  boxShadow: `1px 0px 7px black`,
-                }}
-              >
-                <span>{plate.name}</span>
-              </div>
-            </Html>
-          );
-        })}
-      </group>
-      <group ref={meshRef}></group>
+      <group>{labels}</group>
+      <mesh ref={meshRef}></mesh>
     </>
   );
 };
