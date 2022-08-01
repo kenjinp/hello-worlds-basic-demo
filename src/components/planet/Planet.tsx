@@ -44,6 +44,7 @@ export const Planet: React.FC = () => {
       value: 17,
       step: 1,
     },
+    hideLabels: false,
   });
 
   const { camera } = useThree();
@@ -186,7 +187,7 @@ export const Planet: React.FC = () => {
           numberOfPlates={tectonic.numberOfPlates}
           voronoiSphere={voronoi}
         >
-          <PlateLabels occludeRef={[sphereRef]} />
+          {!tectonic.hideLabels && <PlateLabels occludeRef={[sphereRef]} />}
         </TectonicsComponent>
 
         <mesh ref={meshRef}>
