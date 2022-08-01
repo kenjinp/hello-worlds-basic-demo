@@ -9,6 +9,7 @@ import {
   Sphere,
   Vector3,
 } from "three";
+import { PlateLabels } from "./tectonics/PlateLabel";
 import { TectonicsComponent } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
@@ -161,7 +162,7 @@ export const Planet: React.FC = () => {
           ref={sphereRef}
           onClick={handlePointer}
         >
-          <icosahedronGeometry args={[1, 80]} />
+          <icosahedronGeometry args={[1, 15]} />
           <meshBasicMaterial vertexColors visible={false} />
         </mesh>
         <points>
@@ -184,7 +185,9 @@ export const Planet: React.FC = () => {
         <TectonicsComponent
           numberOfPlates={tectonic.numberOfPlates}
           voronoiSphere={voronoi}
-        />
+        >
+          <PlateLabels occludeRef={[sphereRef]} />
+        </TectonicsComponent>
 
         <mesh ref={meshRef}>
           <bufferGeometry />

@@ -3,17 +3,6 @@ import { Region, VoronoiSphere } from "../voronoi/Voronoi";
 import { Plate } from "./Plate";
 import { randomFloodFill } from "./randomFloodFill";
 
-function randomUnitVector(random: () => number) {
-  var theta = random.real(0, Math.PI * 2);
-  var phi = Math.acos(random.realInclusive(-1, 1));
-  var sinPhi = Math.sin(phi);
-  return new Vector3(
-    Math.cos(theta) * sinPhi,
-    Math.sin(theta) * sinPhi,
-    Math.cos(phi)
-  );
-}
-
 export function choosePlateStartPoints(
   regions: Region[],
   numberOfPlates: number,

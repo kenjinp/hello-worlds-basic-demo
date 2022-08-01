@@ -7,12 +7,23 @@ import {
   MeshBasicMaterial,
 } from "three";
 import { VoronoiSphere } from "../voronoi/Voronoi";
+import { PlateLabel } from "./PlateLabel";
 import { Tectonics as TectonicsImplementation } from "./Tectonics";
 
-export const TectonicsComponent: React.FC<{
-  voronoiSphere: VoronoiSphere;
-  numberOfPlates: number;
-}> = ({ voronoiSphere, numberOfPlates }) => {
+const TectonicsContext = React.createContext<TectonicsImplementation>(
+  null as unknown as TectonicsImplementation
+);
+
+export const useTectonics = () => {
+  return React.useContext(TectonicsContext);
+};
+
+export const TectonicsComponent: React.FC<
+  React.PropsWithChildren<{
+    voronoiSphere: VoronoiSphere;
+    numberOfPlates: number;
+  }>
+> = ({ voronoiSphere, numberOfPlates, children }) => {
   const tectonics = React.useMemo(
     () => new TectonicsImplementation(voronoiSphere, numberOfPlates),
     [voronoiSphere, numberOfPlates]
@@ -61,34 +72,10 @@ export const TectonicsComponent: React.FC<{
     };
   }, [tectonics, meshRef]);
 
-  const labels = React.useMemo(() => {
-    return Array.from(tectonics.plates.values()).map((plate) => {
-      return (
-        <Html
-          position={plate.startRegion.properties.siteXYZ}
-          occlude={[meshRef]}
-        >
-          <div
-            style={{
-              padding: "0.5em",
-              borderRadius: "4px",
-              background: "black",
-              minWidth: "60px",
-              color: `#${plate.color.getHexString()}`,
-              boxShadow: `1px 0px 7px black`,
-            }}
-          >
-            <span>{plate.name}</span>
-          </div>
-        </Html>
-      );
-    });
-  }, [tectonics]);
-
   return (
-    <>
-      <group>{labels}</group>
+    <TectonicsContext.Provider value={tectonics}>
+      {children}
       <mesh ref={meshRef}></mesh>
-    </>
+    </TectonicsContext.Provider>
   );
 };
