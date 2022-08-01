@@ -46,6 +46,8 @@ export const convertFeaturesToRegions = (
         vertices: polygonVerts,
       },
       properties: {
+        index: i,
+        neighbors: feature.properties.neighbours,
         ...feature.properties,
         siteXYZ,
       },

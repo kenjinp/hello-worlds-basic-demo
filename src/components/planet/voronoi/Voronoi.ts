@@ -11,7 +11,7 @@ export interface GeoFeature {
     type: "Polygon";
   };
   properties: {
-    neighbors: number[];
+    neighbours: number[];
     site: LongLat;
     sitecoodinates: LongLat;
   };
@@ -25,9 +25,13 @@ export interface Region {
     type: "Polygon";
   };
   properties: {
+    index: number;
     neighbors: number[];
     site: LongLat;
     siteXYZ: Vector3;
+    // TODO
+    // Might need to calculate centroid for like labeling and such
+    // siteCentroidXYZ: Vector3;
     sitecoodinates: LongLat;
   };
 }
@@ -36,7 +40,7 @@ export type neighbors = number[][];
 
 // Chop up a sphere into Voronoi Regions
 // Offers a couple of helpful query methods
-export default class VoronoiSphere {
+export class VoronoiSphere {
   regions: Region[];
   neighbors: neighbors;
   constructor(

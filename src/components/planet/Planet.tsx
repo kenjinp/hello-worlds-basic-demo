@@ -9,7 +9,8 @@ import {
   Sphere,
   Vector3,
 } from "three";
-import VoronoiSphere from "./voronoi/Voronoi";
+import { TectonicsComponent } from "./tectonics/TectonicsComponent";
+import { VoronoiSphere } from "./voronoi/Voronoi";
 
 export const Planet: React.FC = () => {
   const planet = useControls("planet", {
@@ -33,6 +34,15 @@ export const Planet: React.FC = () => {
     },
     pointsColor: "#000000",
     pointsSize: 100,
+  });
+
+  const tectonic = useControls("tectonics", {
+    numberOfPlates: {
+      min: 2,
+      max: 100,
+      value: 17,
+      step: 1,
+    },
   });
 
   const { camera } = useThree();
@@ -170,9 +180,15 @@ export const Planet: React.FC = () => {
           <sphereGeometry />
           <meshBasicMaterial color="blue" />
         </mesh>
+
+        <TectonicsComponent
+          numberOfPlates={tectonic.numberOfPlates}
+          voronoiSphere={voronoi}
+        />
+
         <mesh ref={meshRef}>
           <bufferGeometry />
-          <meshStandardMaterial vertexColors />
+          <meshStandardMaterial vertexColors visible={false} />
         </mesh>
       </mesh>
     </group>
