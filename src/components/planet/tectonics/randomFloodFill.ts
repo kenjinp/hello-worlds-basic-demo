@@ -28,8 +28,6 @@ export function randomFloodFill(
   randomInteger: (min: number, max: number) => number,
   randomFloat: (min: number, max: number) => number
 ) {
-  console.log("hello");
-
   // We have already established our plate starting regions
   // We will treat these as "fronts" each of which will be a queue
   // that can gobble up it's neighboring regions
@@ -70,8 +68,6 @@ export function randomFloodFill(
   while (fronts.reduce((memo, q) => memo || !q.isEmpty, false)) {
     // iterate through all the fronts randomly
 
-    console.log("bloop");
-
     // shuffle our fronts
     shuffle<Queue<{ region: Region; plate: Plate }>>(fronts, () =>
       randomFloat(0, 1)
@@ -91,18 +87,6 @@ export function randomFloodFill(
       if (!regionIsAlreadyAssigned(region)) {
         assignRegionToPlate(region, plate);
 
-        // const randomNeighbor =
-        //   voronoiSphere.regions[
-        //     region.properties.neighbors[
-        //       randomInteger(0, region.properties.neighbors.length - 1)
-        //     ]
-        //   ];
-
-        // queue.enqueue({
-        //   region: randomNeighbor,
-        //   plate,
-        // });
-
         region.properties.neighbors.forEach((regionIndex) => {
           const region = voronoiSphere.regions[regionIndex];
           queue.enqueue({ region, plate });
@@ -110,7 +94,4 @@ export function randomFloodFill(
       }
     }
   }
-
-  const remaining = assignedRegions.filter((r) => r < 0);
-  console.log({ remaining });
 }
