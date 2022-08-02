@@ -1,4 +1,4 @@
-import { Html } from "@react-three/drei";
+import { MeshProps } from "@react-three/fiber";
 import * as React from "react";
 import {
   BufferGeometry,
@@ -7,7 +7,6 @@ import {
   MeshBasicMaterial,
 } from "three";
 import { VoronoiSphere } from "../voronoi/Voronoi";
-import { PlateLabel } from "./PlateLabel";
 import { Tectonics as TectonicsImplementation } from "./Tectonics";
 
 const TectonicsContext = React.createContext<TectonicsImplementation>(
@@ -19,11 +18,13 @@ export const useTectonics = () => {
 };
 
 export const TectonicsComponent: React.FC<
-  React.PropsWithChildren<{
-    voronoiSphere: VoronoiSphere;
-    numberOfPlates: number;
-  }>
-> = ({ voronoiSphere, numberOfPlates, children }) => {
+  React.PropsWithChildren<
+    {
+      voronoiSphere: VoronoiSphere;
+      numberOfPlates: number;
+    } & MeshProps
+  >
+> = ({ voronoiSphere, numberOfPlates, children, ...props }) => {
   const tectonics = React.useMemo(
     () => new TectonicsImplementation(voronoiSphere, numberOfPlates),
     [voronoiSphere, numberOfPlates]
@@ -75,7 +76,7 @@ export const TectonicsComponent: React.FC<
   return (
     <TectonicsContext.Provider value={tectonics}>
       {children}
-      <mesh ref={meshRef}></mesh>
+      <mesh ref={meshRef} {...props}></mesh>
     </TectonicsContext.Provider>
   );
 };

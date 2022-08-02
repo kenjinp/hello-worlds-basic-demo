@@ -17,6 +17,10 @@ export function choosePlateStartPoints(
 
 const oceanicRate = 0.75;
 
+export const getPlateFromCartesian = (coordinate: Vector3) => {
+  // const fin
+};
+
 export class Tectonics {
   plates: Map<number, Plate> = new Map();
   constructor(
@@ -48,7 +52,6 @@ export class Tectonics {
       i++;
     });
 
-    // hello lets do a random floodfill aglo
     randomFloodFill(
       voronoiSphere,
       this.plates,

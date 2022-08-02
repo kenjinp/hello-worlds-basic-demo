@@ -1,3 +1,4 @@
+import { Planet as HelloPlanet } from "@hello-worlds/react";
 import { useThree } from "@react-three/fiber";
 import { useControls } from "leva";
 import * as React from "react";
@@ -9,9 +10,33 @@ import {
   Sphere,
   Vector3,
 } from "three";
+import planetWorker from "./Planet.worker?worker";
+import { PlateMovement } from "./tectonics/Movement";
 import { PlateLabels } from "./tectonics/PlateLabel";
-import { TectonicsComponent } from "./tectonics/TectonicsComponent";
+import {
+  TectonicsComponent,
+  useTectonics,
+} from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
+
+const FancyPlanet: React.FC<{ radius: number }> = ({ radius }) => {
+  const { camera } = useThree();
+  const tectonics = useTectonics();
+  return (
+    <HelloPlanet
+      planetProps={{
+        radius,
+        minCellSize: 25,
+        minCellResolution: 125,
+      }}
+      lodOrigin={camera.position}
+      worker={planetWorker}
+      data={{
+        tectonics,
+      }}
+    />
+  );
+};
 
 export const Planet: React.FC = () => {
   const planet = useControls("planet", {
@@ -44,7 +69,8 @@ export const Planet: React.FC = () => {
       value: 17,
       step: 1,
     },
-    hideLabels: false,
+    showLabels: false,
+    showMovementVectors: true,
   });
 
   const { camera } = useThree();
@@ -131,7 +157,7 @@ export const Planet: React.FC = () => {
 
   React.useEffect(() => {
     camera.position.copy(
-      new Vector3(planet.planetRadius * 1.5, 0, planet.planetRadius * 1.5)
+      new Vector3(planet.planetRadius * 3, 0, planet.planetRadius * 3)
     );
     camera.lookAt(new Vector3(0, 0, 0));
   }, [planet.planetRadius]);
@@ -187,7 +213,9 @@ export const Planet: React.FC = () => {
           numberOfPlates={tectonic.numberOfPlates}
           voronoiSphere={voronoi}
         >
-          {!tectonic.hideLabels && <PlateLabels occludeRef={[sphereRef]} />}
+          {tectonic.showLabels && <PlateLabels occludeRef={[sphereRef]} />}
+          {/* <FancyPlanet radius={planet.planetRadius} /> */}
+          {tectonic.showMovementVectors && <PlateMovement />}
         </TectonicsComponent>
 
         <mesh ref={meshRef}>
