@@ -65,4 +65,37 @@ export class Plate {
     );
     return movement;
   }
+
+  static calculateMovement(
+    plate: Plate,
+    position: Vector3,
+    tempVector3: Vector3
+  ) {
+    const driftAxis = tempVector3.clone().copy(plate.driftAxis);
+    const startRegionPosition = tempVector3
+      .clone()
+      .copy(plate.startRegion.properties.siteXYZ);
+    const movement = tempVector3
+      .clone()
+      .copy(driftAxis)
+      .clone()
+      .cross(position)
+      .setLength(
+        plate.driftRate *
+          position.clone().projectOnVector(driftAxis).distanceTo(position)
+      );
+    movement.add(
+      startRegionPosition
+        .clone()
+        .cross(position)
+        .setLength(
+          plate.spinRate *
+            position
+              .clone()
+              .projectOnVector(startRegionPosition)
+              .distanceTo(position)
+        )
+    );
+    return movement;
+  }
 }

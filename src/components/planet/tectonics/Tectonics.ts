@@ -1,4 +1,5 @@
 import { Color, MathUtils, Vector3 } from "three";
+import { findFromVoronoiSphere } from "../voronoi/find";
 import { Region, VoronoiSphere } from "../voronoi/Voronoi";
 import { Plate } from "./Plate";
 import { randomFloodFill } from "./randomFloodFill";
@@ -58,5 +59,33 @@ export class Tectonics {
       MathUtils.randInt,
       MathUtils.randFloat
     );
+  }
+
+  static findPlateFromCartesian(
+    tectonics: Tectonics,
+    vector: Vector3,
+    next?: number
+  ): { plate: Plate; region: Region } | null {
+    const { findFromCartesian } = findFromVoronoiSphere(
+      tectonics.voronoiSphere
+    );
+
+    const regionIndex = findFromCartesian(vector, next);
+    if (Number.isFinite(regionIndex)) {
+      next = regionIndex;
+      let plate: Plate | null = null;
+      for (let p = 0; p < tectonics.plates.size; p++) {
+        const entry = tectonics.plates.get(p);
+        if (entry && entry.regions.has(regionIndex)) {
+          plate = entry;
+          break;
+        }
+      }
+      if (plate as Plate | null) {
+        const region = plate!.regions.get(regionIndex);
+        return { plate: plate!, region: region! };
+      }
+    }
+    return null;
   }
 }

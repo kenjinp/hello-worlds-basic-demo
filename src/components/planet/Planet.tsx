@@ -19,7 +19,10 @@ import {
 } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
-const FancyPlanet: React.FC<{ radius: number }> = ({ radius }) => {
+const FancyPlanet: React.FC<React.PropsWithChildren<{ radius: number }>> = ({
+  radius,
+  children,
+}) => {
   const { camera } = useThree();
   const tectonics = useTectonics();
   return (
@@ -34,7 +37,9 @@ const FancyPlanet: React.FC<{ radius: number }> = ({ radius }) => {
       data={{
         tectonics,
       }}
-    />
+    >
+      {children}
+    </HelloPlanet>
   );
 };
 
@@ -60,15 +65,17 @@ export const Planet: React.FC = () => {
     },
     pointsColor: "#000000",
     pointsSize: 100,
+    showPlanet: true,
   });
 
   const tectonic = useControls("tectonics", {
     numberOfPlates: {
       min: 2,
       max: 100,
-      value: 17,
+      value: 36,
       step: 1,
     },
+    showPlates: true,
     showLabels: false,
     showMovementVectors: true,
   });
@@ -212,9 +219,13 @@ export const Planet: React.FC = () => {
         <TectonicsComponent
           numberOfPlates={tectonic.numberOfPlates}
           voronoiSphere={voronoi}
+          visible={tectonic.showPlates}
         >
           {tectonic.showLabels && <PlateLabels occludeRef={[sphereRef]} />}
-          {/* <FancyPlanet radius={planet.planetRadius} /> */}
+          {planet.showPlanet && (
+            <FancyPlanet radius={planet.planetRadius}></FancyPlanet>
+          )}
+
           {tectonic.showMovementVectors && <PlateMovement />}
         </TectonicsComponent>
 

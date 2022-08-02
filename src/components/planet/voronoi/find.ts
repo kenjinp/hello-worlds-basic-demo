@@ -1,6 +1,14 @@
 import { Vector3 } from "three";
 import { LongLat, polarToCartesian } from "./math";
-import { neighbors } from "./Voronoi";
+import { neighbors, VoronoiSphere } from "./Voronoi";
+
+export function findFromVoronoiSphere(voronoiSphere: VoronoiSphere) {
+  return find(
+    voronoiSphere.neighbors,
+    voronoiSphere.points,
+    voronoiSphere.radius
+  );
+}
 
 export function find(neighbors: neighbors, points: LongLat[], radius: number) {
   return {
@@ -15,7 +23,8 @@ export function find(neighbors: neighbors, points: LongLat[], radius: number) {
         dist = xyz.distanceToSquared(
           polarToCartesian(points[cell][1], points[cell][0], radius)
         );
-        neighbors[cell].forEach((i) => {
+        for (let n = 0; n < neighbors[cell].length; n++) {
+          const i = neighbors[cell][n];
           let ndist = xyz.distanceToSquared(
             polarToCartesian(points[i][1], points[i][0], radius)
           );
@@ -23,9 +32,20 @@ export function find(neighbors: neighbors, points: LongLat[], radius: number) {
             dist = ndist;
             next = i;
             found = i;
-            return;
+            break;
           }
-        });
+        }
+        // neighbors[cell].forEach((i) => {
+        //   let ndist = xyz.distanceToSquared(
+        //     polarToCartesian(points[i][1], points[i][0], radius)
+        //   );
+        //   if (ndist < dist) {
+        //     dist = ndist;
+        //     next = i;
+        //     found = i;
+        //     return;
+        //   }
+        // });
       } while (next !== null);
 
       return found;
@@ -40,7 +60,8 @@ export function find(neighbors: neighbors, points: LongLat[], radius: number) {
         dist = xyz.distanceToSquared(
           polarToCartesian(points[cell][1], points[cell][0], radius)
         );
-        neighbors[cell].forEach((i) => {
+        for (let n = 0; n < neighbors[cell].length; n++) {
+          const i = neighbors[cell][n];
           let ndist = xyz.distanceToSquared(
             polarToCartesian(points[i][1], points[i][0], radius)
           );
@@ -48,9 +69,9 @@ export function find(neighbors: neighbors, points: LongLat[], radius: number) {
             dist = ndist;
             next = i;
             found = i;
-            return;
+            break;
           }
-        });
+        }
       } while (next !== null);
 
       return found;
