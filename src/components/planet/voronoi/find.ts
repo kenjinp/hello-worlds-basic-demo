@@ -12,12 +12,12 @@ export function findFromVoronoiSphere(voronoiSphere: VoronoiSphere) {
 
 export function find(neighbors: neighbors, points: LongLat[], radius: number) {
   return {
-    findFromPolar(long: number, lat: number, next = 0) {
+    findFromPolar(long: number, lat: number, next: number | null = 0) {
       let cell,
         dist,
         found = next;
       const xyz = polarToCartesian(lat, long, radius);
-      do {
+      while (next !== null) {
         cell = next;
         next = null;
         dist = xyz.distanceToSquared(
@@ -35,26 +35,15 @@ export function find(neighbors: neighbors, points: LongLat[], radius: number) {
             break;
           }
         }
-        // neighbors[cell].forEach((i) => {
-        //   let ndist = xyz.distanceToSquared(
-        //     polarToCartesian(points[i][1], points[i][0], radius)
-        //   );
-        //   if (ndist < dist) {
-        //     dist = ndist;
-        //     next = i;
-        //     found = i;
-        //     return;
-        //   }
-        // });
-      } while (next !== null);
+      }
 
       return found;
     },
-    findFromCartesian(xyz: Vector3, next = 0) {
+    findFromCartesian(xyz: Vector3, next: number | null = 0) {
       let cell,
         dist,
         found = next;
-      do {
+      while (next !== null) {
         cell = next;
         next = null;
         dist = xyz.distanceToSquared(
@@ -72,7 +61,7 @@ export function find(neighbors: neighbors, points: LongLat[], radius: number) {
             break;
           }
         }
-      } while (next !== null);
+      }
 
       return found;
     },

@@ -2,6 +2,7 @@ import { Color, Vector3 } from "three";
 import { Region } from "../voronoi/Voronoi";
 
 export interface PlateProps {
+  index: number;
   name: string;
   color: Color;
   driftAxis: Vector3;
@@ -13,6 +14,7 @@ export interface PlateProps {
 }
 
 export class Plate {
+  index: number;
   name: string;
   color: Color;
   driftAxis: Vector3;
@@ -22,7 +24,11 @@ export class Plate {
   oceanic: boolean;
   startRegion: Region;
   regions: Map<number, Region> = new Map<number, Region>();
+  externalBorderRegions: Map<number, Region> = new Map<number, Region>();
+  internalBorderRegions: Map<number, Region> = new Map<number, Region>();
+  sides: Set<Vector3> = new Set();
   constructor({
+    index,
     name,
     color,
     driftAxis,
@@ -32,6 +38,7 @@ export class Plate {
     oceanic,
     startRegion,
   }: PlateProps) {
+    this.index = index;
     this.color = color;
     this.driftAxis = driftAxis;
     this.driftRate = driftRate;
@@ -71,14 +78,12 @@ export class Plate {
     position: Vector3,
     tempVector3: Vector3
   ) {
-    const driftAxis = tempVector3.clone().copy(plate.driftAxis);
+    const driftAxis = tempVector3.copy(plate.driftAxis);
     const startRegionPosition = tempVector3
       .clone()
       .copy(plate.startRegion.properties.siteXYZ);
     const movement = tempVector3
-      .clone()
       .copy(driftAxis)
-      .clone()
       .cross(position)
       .setLength(
         plate.driftRate *
@@ -86,7 +91,6 @@ export class Plate {
       );
     movement.add(
       startRegionPosition
-        .clone()
         .cross(position)
         .setLength(
           plate.spinRate *

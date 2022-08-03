@@ -15,6 +15,7 @@ const tempVector3 = new Vector3();
 const groundColor = new Color(0x55b519);
 const oceanColor = new Color(0x09c3db);
 const noColor = new Color(0x000000);
+
 let hNext: number | undefined = undefined;
 
 const heightGenerator: ChunkGenerator3<ThreadParams, number> = {

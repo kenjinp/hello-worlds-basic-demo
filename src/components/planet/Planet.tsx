@@ -7,10 +7,12 @@ import {
   Color,
   Float32BufferAttribute,
   Mesh,
+  MeshBasicMaterial,
   Sphere,
   Vector3,
 } from "three";
 import planetWorker from "./Planet.worker?worker";
+import { Edges } from "./tectonics/Edges";
 import { PlateMovement } from "./tectonics/Movement";
 import { PlateLabels } from "./tectonics/PlateLabel";
 import {
@@ -19,14 +21,22 @@ import {
 } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
+const material = new MeshBasicMaterial({ vertexColors: true });
+
 const FancyPlanet: React.FC<React.PropsWithChildren<{ radius: number }>> = ({
   radius,
   children,
 }) => {
+  const planetRef = React.useRef();
   const { camera } = useThree();
   const tectonics = useTectonics();
+
+  React.useEffect(() => {
+    planetRef.current.material = material;
+  }, [planetRef]);
   return (
     <HelloPlanet
+      ref={planetRef}
       planetProps={{
         radius,
         minCellSize: 25,
@@ -65,7 +75,7 @@ export const Planet: React.FC = () => {
     },
     pointsColor: "#000000",
     pointsSize: 100,
-    showPlanet: true,
+    showPlanet: false,
   });
 
   const tectonic = useControls("tectonics", {
@@ -78,6 +88,8 @@ export const Planet: React.FC = () => {
     showPlates: true,
     showLabels: false,
     showMovementVectors: true,
+    showInternalBorders: false,
+    showPlateEdges: true,
   });
 
   const { camera } = useThree();
@@ -220,6 +232,7 @@ export const Planet: React.FC = () => {
           numberOfPlates={tectonic.numberOfPlates}
           voronoiSphere={voronoi}
           visible={tectonic.showPlates}
+          showInternalBorders={tectonic.showInternalBorders}
         >
           {tectonic.showLabels && <PlateLabels occludeRef={[sphereRef]} />}
           {planet.showPlanet && (
@@ -227,6 +240,7 @@ export const Planet: React.FC = () => {
           )}
 
           {tectonic.showMovementVectors && <PlateMovement />}
+          {tectonic.showPlateEdges && <Edges />}
         </TectonicsComponent>
 
         <mesh ref={meshRef}>

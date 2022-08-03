@@ -1,6 +1,7 @@
 import { Color, MathUtils, Vector3 } from "three";
 import { findFromVoronoiSphere } from "../voronoi/find";
 import { Region, VoronoiSphere } from "../voronoi/Voronoi";
+import { Edge, findEdges } from "./Edge";
 import { Plate } from "./Plate";
 import { randomFloodFill } from "./randomFloodFill";
 
@@ -16,14 +17,11 @@ export function choosePlateStartPoints(
   return chosenRegions;
 }
 
-const oceanicRate = 0.75;
-
-export const getPlateFromCartesian = (coordinate: Vector3) => {
-  // const fin
-};
+const oceanicRate = 0.7;
 
 export class Tectonics {
   plates: Map<number, Plate> = new Map();
+  edges: Edge[] = [];
   constructor(
     public readonly voronoiSphere: VoronoiSphere,
     public readonly numberOfPlates: number
@@ -38,8 +36,9 @@ export class Tectonics {
       this.plates.set(
         i,
         new Plate({
+          index: i,
           color: new Color(Math.random() * 0xffffff),
-          name: `plate-${this.plates.size}`,
+          name: `plate-${i}`,
           startRegion: voronoiSphere.regions[val],
           driftAxis: new Vector3().randomDirection(),
           driftRate: MathUtils.randFloat(-Math.PI / 30, Math.PI / 30),
@@ -53,12 +52,11 @@ export class Tectonics {
       i++;
     });
 
-    randomFloodFill(
-      voronoiSphere,
-      this.plates,
-      MathUtils.randInt,
-      MathUtils.randFloat
-    );
+    randomFloodFill(this, MathUtils.randInt, MathUtils.randFloat);
+
+    findEdges(this);
+
+    console.log(this);
   }
 
   static findPlateFromCartesian(
@@ -76,13 +74,13 @@ export class Tectonics {
       let plate: Plate | null = null;
       for (let p = 0; p < tectonics.plates.size; p++) {
         const entry = tectonics.plates.get(p);
-        if (entry && entry.regions.has(regionIndex)) {
+        if (entry && entry.regions.has(regionIndex!)) {
           plate = entry;
           break;
         }
       }
       if (plate as Plate | null) {
-        const region = plate!.regions.get(regionIndex);
+        const region = plate!.regions.get(regionIndex!);
         return { plate: plate!, region: region! };
       }
     }

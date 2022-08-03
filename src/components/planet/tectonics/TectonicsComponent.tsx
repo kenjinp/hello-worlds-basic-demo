@@ -2,6 +2,7 @@ import { MeshProps } from "@react-three/fiber";
 import * as React from "react";
 import {
   BufferGeometry,
+  Color,
   Float32BufferAttribute,
   Mesh,
   MeshBasicMaterial,
@@ -17,14 +18,23 @@ export const useTectonics = () => {
   return React.useContext(TectonicsContext);
 };
 
+const borderColor = new Color(0xeb4034);
+
 export const TectonicsComponent: React.FC<
   React.PropsWithChildren<
     {
       voronoiSphere: VoronoiSphere;
       numberOfPlates: number;
+      showInternalBorders?: boolean;
     } & MeshProps
   >
-> = ({ voronoiSphere, numberOfPlates, children, ...props }) => {
+> = ({
+  voronoiSphere,
+  numberOfPlates,
+  children,
+  showInternalBorders = false,
+  ...props
+}) => {
   const tectonics = React.useMemo(
     () => new TectonicsImplementation(voronoiSphere, numberOfPlates),
     [voronoiSphere, numberOfPlates]
@@ -47,8 +57,17 @@ export const TectonicsComponent: React.FC<
           const featureColor = plate.color;
           regionVerts.push(...region.geometry.vertices);
 
+          const isInternalBorder = plate.internalBorderRegions.has(
+            region.properties.index
+          );
+
           for (let c = 0; c < region.geometry.vertices.length; c += 3) {
-            regionColors.push(featureColor.r, featureColor.g, featureColor.b);
+            const color = showInternalBorders
+              ? isInternalBorder
+                ? borderColor
+                : featureColor
+              : featureColor;
+            regionColors.push(color.r, color.g, color.b);
           }
         });
 
@@ -71,7 +90,7 @@ export const TectonicsComponent: React.FC<
       });
       mesh?.children.forEach((child) => child.removeFromParent());
     };
-  }, [tectonics, meshRef]);
+  }, [tectonics, meshRef, showInternalBorders]);
 
   return (
     <TectonicsContext.Provider value={tectonics}>

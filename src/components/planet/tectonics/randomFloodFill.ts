@@ -1,6 +1,7 @@
-import { Region, VoronoiSphere } from "../voronoi/Voronoi";
+import { Region } from "../voronoi/Voronoi";
 import { Plate } from "./Plate";
 import { Queue } from "./Queue";
+import { Tectonics } from "./Tectonics";
 
 function shuffle<T>(array: T[], randomFloat: () => number) {
   let currentIndex = array.length,
@@ -23,11 +24,11 @@ function shuffle<T>(array: T[], randomFloat: () => number) {
 }
 
 export function randomFloodFill(
-  voronoiSphere: VoronoiSphere,
-  plates: Map<number, Plate>,
+  tectonics: Tectonics,
   randomInteger: (min: number, max: number) => number,
   randomFloat: (min: number, max: number) => number
 ) {
+  const { plates, voronoiSphere } = tectonics;
   // We have already established our plate starting regions
   // We will treat these as "fronts" each of which will be a queue
   // that can gobble up it's neighboring regions
@@ -39,7 +40,7 @@ export function randomFloodFill(
   };
 
   const assignRegionToPlate = (region: Region, plate: Plate) => {
-    assignedRegions[region.properties.index] = region.properties.index;
+    assignedRegions[region.properties.index] = plate.index;
     plate.regions.set(region.properties.index, region);
   };
 
@@ -89,8 +90,20 @@ export function randomFloodFill(
 
         region.properties.neighbors.forEach((regionIndex) => {
           const region = voronoiSphere.regions[regionIndex];
-          queue.enqueue({ region, plate });
+          if (!regionIsAlreadyAssigned(region)) {
+            queue.enqueue({ region, plate });
+          }
         });
+      } else {
+        const occupyingPlateIndex = assignedRegions[region.properties.index];
+        if (occupyingPlateIndex !== plate.index) {
+          plate.externalBorderRegions.set(region.properties.index, region);
+          const occupyingPlate = plates.get(occupyingPlateIndex);
+          occupyingPlate?.internalBorderRegions.set(
+            region.properties.index,
+            region
+          );
+        }
       }
     }
   }
