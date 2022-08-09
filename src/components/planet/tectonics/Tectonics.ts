@@ -3,6 +3,7 @@ import { findFromVoronoiSphere } from "../voronoi/find";
 import { Region, VoronoiSphere } from "../voronoi/Voronoi";
 import { Edge, findEdges } from "./Edge";
 import { Plate } from "./Plate";
+import { PlateRegion } from "./PlateRegion";
 import { randomFloodFill } from "./randomFloodFill";
 
 export function choosePlateStartPoints(
@@ -21,7 +22,7 @@ const oceanicRate = 0.7;
 
 export class Tectonics {
   plates: Map<number, Plate> = new Map();
-  edges: Edge[] = [];
+  edges: Map<number, Edge> = new Map();
   constructor(
     public readonly voronoiSphere: VoronoiSphere,
     public readonly numberOfPlates: number
@@ -57,13 +58,26 @@ export class Tectonics {
     findEdges(this);
 
     console.log(this);
+    const edgeSize = this.edges.size;
+    const totalNeighbors = Array.from(this.plates.values()).reduce(
+      (memo, plate) => {
+        memo += plate.neighbors.size;
+        return memo;
+      },
+      0
+    );
+    console.log({ edgeSize, totalNeighbors });
+    console.assert(
+      edgeSize === totalNeighbors / 2,
+      "Edge keys collision detected"
+    );
   }
 
   static findPlateFromCartesian(
     tectonics: Tectonics,
     vector: Vector3,
     next?: number
-  ): { plate: Plate; region: Region } | null {
+  ): PlateRegion | null {
     const { findFromCartesian } = findFromVoronoiSphere(
       tectonics.voronoiSphere
     );
@@ -80,8 +94,8 @@ export class Tectonics {
         }
       }
       if (plate as Plate | null) {
-        const region = plate!.regions.get(regionIndex!);
-        return { plate: plate!, region: region! };
+        const region = plate?.regions.get(regionIndex!);
+        return region || null;
       }
     }
     return null;

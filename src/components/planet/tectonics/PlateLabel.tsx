@@ -1,15 +1,7 @@
-import { Plate } from "./Plate";
 import { Html } from "@react-three/drei";
 import * as React from "react";
-import {
-  BufferGeometry,
-  Float32BufferAttribute,
-  Mesh,
-  MeshBasicMaterial,
-  Object3D,
-} from "three";
-import { VoronoiSphere } from "../voronoi/Voronoi";
-import { Tectonics as TectonicsImplementation } from "./Tectonics";
+import { Object3D } from "three";
+import { Plate } from "./Plate";
 import { useTectonics } from "./TectonicsComponent";
 
 export const PlateLabel: React.FC<{
@@ -20,7 +12,7 @@ export const PlateLabel: React.FC<{
 
   return (
     <Html
-      position={plate.startRegion.properties.siteXYZ}
+      position={plate.startRegion.region.properties.siteXYZ}
       occlude={occludeRef}
       onOcclude={(hidden) => {
         setHidden(hidden);

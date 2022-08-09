@@ -18,17 +18,28 @@ const noColor = new Color(0x000000);
 
 let hNext: number | undefined = undefined;
 
-const heightGenerator: ChunkGenerator3<ThreadParams, number> = {
+const PlateMovementHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
   get({ input, data: { tectonics }, radius }) {
     const finding = Tectonics.findPlateFromCartesian(tectonics, input, hNext);
     if (finding) {
       const { plate, region } = finding;
       const movement = Plate.calculateMovement(
         plate,
-        tempVector3.copy(region.properties.siteXYZ),
-        tempVector3
+        tempVector3.copy(region.properties.siteXYZ).clone(),
+        tempVector3.clone()
       );
       return movement.length();
+    }
+    return 0;
+  },
+};
+
+const PlateElevationHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
+  get({ input, data: { tectonics }, radius }) {
+    const finding = Tectonics.findPlateFromCartesian(tectonics, input, hNext);
+    if (finding) {
+      const { plate, region } = finding;
+      return plate.elevation;
     }
     return 0;
   },
@@ -51,6 +62,6 @@ const colorGenerator: ChunkGenerator3<ThreadParams, Color> = {
 };
 
 createThreadedPlanetWorker<ThreadParams>({
-  heightGenerator,
+  heightGenerator: PlateElevationHeightGenerator,
   colorGenerator,
 });

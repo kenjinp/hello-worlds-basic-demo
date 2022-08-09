@@ -53,7 +53,7 @@ export const TectonicsComponent: React.FC<
         const regionColors: number[] = [];
         const regionVerts: number[] = [];
 
-        plate.regions.forEach((region) => {
+        plate.regions.forEach(({ region }) => {
           const featureColor = plate.color;
           regionVerts.push(...region.geometry.vertices);
 

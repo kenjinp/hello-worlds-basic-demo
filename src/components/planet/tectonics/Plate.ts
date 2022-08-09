@@ -1,5 +1,6 @@
 import { Color, Vector3 } from "three";
 import { Region } from "../voronoi/Voronoi";
+import { PlateRegion } from "./PlateRegion";
 
 export interface PlateProps {
   index: number;
@@ -22,11 +23,18 @@ export class Plate {
   spinRate: number;
   elevation: number;
   oceanic: boolean;
-  startRegion: Region;
-  regions: Map<number, Region> = new Map<number, Region>();
-  externalBorderRegions: Map<number, Region> = new Map<number, Region>();
-  internalBorderRegions: Map<number, Region> = new Map<number, Region>();
+  startRegion: PlateRegion;
+  regions: Map<number, PlateRegion> = new Map<number, PlateRegion>();
+  externalBorderRegions: Map<number, PlateRegion> = new Map<
+    number,
+    PlateRegion
+  >();
+  internalBorderRegions: Map<number, PlateRegion> = new Map<
+    number,
+    PlateRegion
+  >();
   sides: Set<Vector3> = new Set();
+  neighbors: Map<number, Plate> = new Map();
   constructor({
     index,
     name,
@@ -45,9 +53,9 @@ export class Plate {
     this.spinRate = spinRate;
     this.elevation = elevation;
     this.oceanic = oceanic;
-    this.startRegion = startRegion;
+    this.startRegion = new PlateRegion(startRegion, this);
     this.name = name;
-    this.regions.set(startRegion.properties.index, startRegion);
+    this.regions.set(startRegion.properties.index, this.startRegion);
   }
 
   calculateMovement(position: Vector3) {
@@ -59,14 +67,14 @@ export class Plate {
           position.clone().projectOnVector(this.driftAxis).distanceTo(position)
       );
     movement.add(
-      this.startRegion.properties.siteXYZ
+      this.startRegion.region.properties.siteXYZ
         .clone()
         .cross(position)
         .setLength(
           this.spinRate *
             position
               .clone()
-              .projectOnVector(this.startRegion.properties.siteXYZ)
+              .projectOnVector(this.startRegion.region.properties.siteXYZ)
               .distanceTo(position)
         )
     );
@@ -81,7 +89,7 @@ export class Plate {
     const driftAxis = tempVector3.copy(plate.driftAxis);
     const startRegionPosition = tempVector3
       .clone()
-      .copy(plate.startRegion.properties.siteXYZ);
+      .copy(plate.startRegion.region.properties.siteXYZ);
     const movement = tempVector3
       .copy(driftAxis)
       .cross(position)

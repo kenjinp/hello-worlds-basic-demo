@@ -7,12 +7,12 @@ import {
   Color,
   Float32BufferAttribute,
   Mesh,
-  MeshBasicMaterial,
+  MeshStandardMaterial,
   Sphere,
   Vector3,
 } from "three";
 import planetWorker from "./Planet.worker?worker";
-import { Edges } from "./tectonics/Edges";
+import { EdgePoints } from "./tectonics/Edges";
 import { PlateMovement } from "./tectonics/Movement";
 import { PlateLabels } from "./tectonics/PlateLabel";
 import {
@@ -21,7 +21,7 @@ import {
 } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
-const material = new MeshBasicMaterial({ vertexColors: true });
+const material = new MeshStandardMaterial({ vertexColors: true });
 
 const FancyPlanet: React.FC<React.PropsWithChildren<{ radius: number }>> = ({
   radius,
@@ -240,7 +240,7 @@ export const Planet: React.FC = () => {
           )}
 
           {tectonic.showMovementVectors && <PlateMovement />}
-          {tectonic.showPlateEdges && <Edges />}
+          {tectonic.showPlateEdges && <EdgePoints />}
         </TectonicsComponent>
 
         <mesh ref={meshRef}>

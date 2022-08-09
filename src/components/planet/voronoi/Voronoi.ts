@@ -22,6 +22,7 @@ export interface Region {
   geometry: {
     coordinates: [LongLat[]];
     vertices: number[];
+    // verticesXYZ: Vector3[];
     type: "Polygon";
   };
   properties: {

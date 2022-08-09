@@ -68,11 +68,12 @@ export const PlateMovement: React.FC = () => {
       }
       const regions = Array.from(plate.regions.values());
       for (let r = 0; r < regions.length; r++) {
-        const region = regions[r];
-        if (!region) {
+        const plateRegion = regions[r];
+        if (!plateRegion) {
           console.log("region not found", r);
           continue;
         }
+        const { region } = plateRegion;
         const movement = plate.calculateMovement(region.properties.siteXYZ);
         const normal = tempVector3
           .randomDirection()

@@ -1,5 +1,6 @@
 import { Region } from "../voronoi/Voronoi";
 import { Plate } from "./Plate";
+import { PlateRegion } from "./PlateRegion";
 import { Queue } from "./Queue";
 import { Tectonics } from "./Tectonics";
 
@@ -41,7 +42,7 @@ export function randomFloodFill(
 
   const assignRegionToPlate = (region: Region, plate: Plate) => {
     assignedRegions[region.properties.index] = plate.index;
-    plate.regions.set(region.properties.index, region);
+    plate.regions.set(region.properties.index, new PlateRegion(region, plate));
   };
 
   const fronts: Queue<{ region: Region; plate: Plate }>[] = new Array(
@@ -51,15 +52,18 @@ export function randomFloodFill(
     .map((_) => new Queue<{ region: Region; plate: Plate }>());
 
   plates.forEach((plate, index) => {
-    assignedRegions[plate.startRegion.properties.index] =
-      plate.startRegion.properties.index;
+    assignedRegions[plate.startRegion.region.properties.index] =
+      plate.startRegion.region.properties.index;
     // we will prime the fronts with a random neighbor of the plates starting region
     fronts[index].enqueue({
       plate,
       region:
         voronoiSphere.regions[
-          plate.startRegion.properties.neighbors[
-            randomInteger(0, plate.startRegion.properties.neighbors.length - 1)
+          plate.startRegion.region.properties.neighbors[
+            randomInteger(
+              0,
+              plate.startRegion.region.properties.neighbors.length - 1
+            )
           ]
         ],
     });
@@ -90,18 +94,36 @@ export function randomFloodFill(
 
         region.properties.neighbors.forEach((regionIndex) => {
           const region = voronoiSphere.regions[regionIndex];
-          if (!regionIsAlreadyAssigned(region)) {
-            queue.enqueue({ region, plate });
-          }
+          // if (!regionIsAlreadyAssigned(region)) {
+          queue.enqueue({ region, plate });
+          // }
         });
       } else {
         const occupyingPlateIndex = assignedRegions[region.properties.index];
         if (occupyingPlateIndex !== plate.index) {
-          plate.externalBorderRegions.set(region.properties.index, region);
           const occupyingPlate = plates.get(occupyingPlateIndex);
+          const externalRegion = occupyingPlate?.regions.get(
+            region.properties.index
+          );
+          if (!externalRegion) {
+            continue;
+          }
+          if (!occupyingPlate) {
+            console.warn(
+              "no occuplying plate, even though it as assigned",
+              occupyingPlateIndex
+            );
+            continue;
+          }
+          plate.externalBorderRegions.set(
+            region.properties.index,
+            externalRegion
+          );
+          plate.neighbors.set(occupyingPlate.index, occupyingPlate);
+          occupyingPlate.neighbors.set(plate.index, plate);
           occupyingPlate?.internalBorderRegions.set(
             region.properties.index,
-            region
+            externalRegion
           );
         }
       }

@@ -16,6 +16,7 @@ export const convertFeaturesToRegions = (
     const siteXYZ = polarToCartesian(lat, lon, radius);
 
     const polygonVerts = [];
+    // const polygonXYZ = [];
 
     const coords3d = feature.geometry.coordinates
       .map((coordsSegment) =>
@@ -39,11 +40,19 @@ export const convertFeaturesToRegions = (
 
     polygonVerts.push(...xyz);
 
+    // for (let i = 0; i < xyz.length; i += 3) {
+    //   const x = xyz[i];
+    //   const y = xyz[i + 1];
+    //   const z = xyz[i + 2];
+    //   polygonXYZ.push(new Vector3(x, y, z));
+    // }
+
     regions.push({
       ...feature,
       geometry: {
         ...feature.geometry,
         vertices: polygonVerts,
+        // verticesXYZ: polygonXYZ,
       },
       properties: {
         index: i,
