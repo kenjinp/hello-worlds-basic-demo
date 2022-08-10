@@ -1,4 +1,3 @@
-import { useFrame } from "@react-three/fiber";
 import * as React from "react";
 import {
   Color,
@@ -51,66 +50,34 @@ export const EdgePoints: React.FC = () => {
     let n = 0;
     const edges = Array.from(tectonics.edges.values());
     for (let i = 0; i < edges.length; i += 1) {
-      for (let j = 0; j < edges[i].coordinates.length; j++) {
+      const edge = edges[i];
+      const edgeColor = new Color(Math.random() * 0xffffff);
+      for (let j = 0; j < edge.coordinates.length; j++) {
         n++;
-        o.position.copy(edges[i].coordinates[j].clone());
-        // console.log(tectonics.edges[i].calculateBoundaryStress(o.position));
+        o.position.copy(edge.coordinates[j]);
 
-        // const normal = tempVector3.clone().subVectors(o.position, origin);
-        // o.rotation.setFromVector3(normal);
         o.lookAt(origin);
         o.rotateX((90 * Math.PI) / 180);
-        // o.rotation.x = Math.PI / 2;
-        // o.rotateX((90 * Math.PI) / 2);
-        // o.scale.setScalar(50);
 
         o.updateMatrixWorld();
-        instancesRef.current.setMatrixAt(i, o.matrixWorld);
+        instancesRef.current.setMatrixAt(n, o.matrixWorld);
+        instancesRef.current.setColorAt(n, edgeColor);
       }
     }
 
     instancesRef.current.count = n;
     instancesRef.current.instanceMatrix.needsUpdate = true;
+    instancesRef.current.instanceColor!.needsUpdate = true;
   }
 
-  // React.useEffect(updateInstances, [tectonics.edges]);
-
-  useFrame(updateInstances);
-
-  const Labels = React.useMemo(
-    () => (
-      <>
-        {Array.from(tectonics.edges.values()).map((edge, i) => {
-          const blahs = Array.from(edge.coordinates.values());
-          const edgeColor = new Color(Math.random() * 0xffffff);
-          return (
-            <React.Fragment key={`edge-${JSON.stringify(edge)}`}>
-              {blahs.map((coordinates, i) => {
-                return (
-                  <React.Fragment
-                    key={`whatever-${JSON.stringify(coordinates)}`}
-                  >
-                    <mesh position={coordinates}>
-                      <sphereGeometry args={[100, 32, 32]} />
-                      <meshBasicMaterial color={edgeColor} />
-                    </mesh>
-                  </React.Fragment>
-                );
-              })}
-            </React.Fragment>
-          );
-        })}
-      </>
-    ),
-    [tectonics.edges]
-  );
+  React.useEffect(updateInstances, [tectonics.edges]);
 
   return (
     <group>
-      {Labels}
+      {/* {Labels} */}
       <instancedMesh ref={instancesRef} args={[null, null, 100_000]}>
-        <cylinderBufferGeometry args={[200, 100, 1000, 5, 4]} />
-        <meshNormalMaterial />
+        <sphereBufferGeometry args={[100, 32, 32]} />
+        <meshBasicMaterial />
       </instancedMesh>
     </group>
   );

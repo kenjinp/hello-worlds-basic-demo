@@ -1,5 +1,4 @@
 import { Vector3 } from "three";
-import { polarToCartesian } from "../voronoi/math";
 import { Plate } from "./Plate";
 import { Tectonics } from "./Tectonics";
 
@@ -135,26 +134,30 @@ export function findEdges(tectonics: Tectonics) {
           internalMatchingRegions
         );
 
+        const assembleVerts = (verts: number[]) => {
+          const tempVector3 = new Vector3();
+          const vertsAssembled: Vector3[] = [];
+          for (let i = 0; i < verts.length; i += 3) {
+            const x = verts[i];
+            const y = verts[i + 1];
+            const z = verts[i + 2];
+            vertsAssembled.push(tempVector3.set(x, y, z).clone());
+          }
+          return vertsAssembled;
+        };
+
         internalMatchingRegions.forEach(({ region }) => {
           region.properties.neighbors.forEach((neighborIndex) => {
             const neighborRegion =
               neighborPlate.internalBorderRegions.get(neighborIndex);
             if (neighborRegion) {
               console.log({ neighborRegion, region });
-              region.geometry.coordinates[0].forEach((longLat) => {
-                const coordinateKey = edgeHashKey(longLat);
-                neighborRegion.region.geometry.coordinates[0].forEach(
-                  (neighborLonngLat) => {
-                    const matchCoordinateKey = edgeHashKey(neighborLonngLat);
-                    if (coordinateKey === matchCoordinateKey) {
-                      coordinates.set(
-                        matchCoordinateKey,
-                        polarToCartesian(
-                          longLat[1],
-                          longLat[0],
-                          tectonics.voronoiSphere.radius
-                        ).clone()
-                      );
+
+              assembleVerts(region.geometry.vertices).forEach((vec3) => {
+                assembleVerts(neighborRegion.region.geometry.vertices).forEach(
+                  (nVec3) => {
+                    if (vec3.equals(nVec3)) {
+                      coordinates.set(JSON.stringify(vec3), vec3);
                     }
                   }
                 );

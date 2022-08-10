@@ -92,7 +92,11 @@ export function randomFloodFill(
       if (!regionIsAlreadyAssigned(region)) {
         assignRegionToPlate(region, plate);
 
-        region.properties.neighbors.forEach((regionIndex) => {
+        // shuffly neighbors to avoid Slovakia syndrome
+
+        shuffle<number>(region.properties.neighbors, () =>
+          randomFloat(0, 1)
+        ).forEach((regionIndex) => {
           const region = voronoiSphere.regions[regionIndex];
           // if (!regionIsAlreadyAssigned(region)) {
           queue.enqueue({ region, plate });
