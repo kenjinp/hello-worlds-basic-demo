@@ -7,7 +7,7 @@ import {
   Color,
   Float32BufferAttribute,
   Mesh,
-  MeshStandardMaterial,
+  MeshBasicMaterial,
   Sphere,
   Vector3,
 } from "three";
@@ -21,12 +21,11 @@ import {
 } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
-const material = new MeshStandardMaterial({ vertexColors: true });
+const material = new MeshBasicMaterial({ vertexColors: true });
 
-const FancyPlanet: React.FC<React.PropsWithChildren<{ radius: number }>> = ({
-  radius,
-  children,
-}) => {
+const FancyPlanet: React.FC<
+  React.PropsWithChildren<{ radius: number; seaLevel: number }>
+> = ({ radius, seaLevel, children }) => {
   const planetRef = React.useRef();
   const { camera } = useThree();
   const tectonics = useTectonics();
@@ -46,6 +45,7 @@ const FancyPlanet: React.FC<React.PropsWithChildren<{ radius: number }>> = ({
       worker={planetWorker}
       data={{
         tectonics,
+        seaLevel,
       }}
     >
       {children}
@@ -76,6 +76,7 @@ export const Planet: React.FC = () => {
     pointsColor: "#000000",
     pointsSize: 100,
     showPlanet: false,
+    seaLevel: 0,
   });
 
   const tectonic = useControls("tectonics", {
@@ -236,7 +237,10 @@ export const Planet: React.FC = () => {
         >
           {tectonic.showLabels && <PlateLabels occludeRef={[sphereRef]} />}
           {planet.showPlanet && (
-            <FancyPlanet radius={planet.planetRadius}></FancyPlanet>
+            <FancyPlanet
+              radius={planet.planetRadius}
+              seaLevel={planet.seaLevel}
+            ></FancyPlanet>
           )}
 
           {tectonic.showMovementVectors && <PlateMovement />}

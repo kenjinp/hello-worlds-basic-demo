@@ -1,10 +1,41 @@
 import { Vector3 } from "three";
 import { Plate } from "./Plate";
+import { PlateRegion } from "./PlateRegion";
 import { Tectonics } from "./Tectonics";
+import { vectorTo } from "./utils";
 
 const tempVector3 = new Vector3();
 
-export function calculateStress(
+// export function calculateStressOnEdge(
+//   movement0: Vector3,
+//   movement1: Vector3,
+//   boundaryVector: Vector3,
+//   boundaryNormal: Vector3
+// ) {
+//   const relativeMovement = movement0.clone().sub(movement1);
+//   const pressureVector = relativeMovement
+//     .clone()
+//     .projectOnVector(boundaryNormal);
+//   let pressure = pressureVector.length();
+//   if (pressureVector.dot(boundaryNormal) > 0) pressure = -pressure;
+//   const shear = relativeMovement
+//     .clone()
+//     .projectOnVector(boundaryVector)
+//     .length();
+//   return {
+//     pressure: 2 / (1 + Math.exp(-pressure / 30)) - 1,
+//     shear: 2 / (1 + Math.exp(-shear / 30)) - 1,
+//   };
+// }
+
+export function calculateRelativeMotionOnVertex(
+  movement0: Vector3,
+  movement1: Vector3
+) {
+  return movement0.clone().sub(movement1);
+}
+
+export function calculateStressOnEdge(
   movement0: Vector3,
   movement1: Vector3,
   boundaryVector: Vector3,
@@ -25,12 +56,6 @@ export function calculateStress(
     shear: 2 / (1 + Math.exp(-shear / 30)) - 1,
   };
 }
-
-// export const edgeHashKey = (tuple: [number, number]) => {
-//   let [x, y] = tuple.sort();
-//   return (x * 0x1f1f1f1f) ^ y;
-// };
-
 // MAX_ID should change with the planetSize + world coordinates
 export const MAX_ID = 0x1f1f1f1f;
 function edgeHashKey(tuple: [number, number]) {
@@ -46,10 +71,29 @@ function decomposeKeyRight(x: number) {
   return x % MAX_ID;
 }
 
+const BOUNDARY_CONST = 0.3;
+
+export enum BoundaryTypes {
+  OCEAN_COLLISION = "OCEAN_COLLISION",
+  SUBDUCTION = "SUBDUCTION",
+  SUPERDUCTION = "SUPERDUCTION",
+  DIVERGING = "DIVERGING",
+  SHEARING = "SHEARING",
+  DORMANT = "DORMANT",
+}
+
 export class Edge {
   plates: Map<number, Plate> = new Map();
   // regions: Map<number, PlateRegion> = new Map();
-  coordinates: Vector3[] = [];
+  coordinates: {
+    coordinate: Vector3;
+    region: PlateRegion;
+    neighborRegion: PlateRegion;
+    elevation: number;
+    pressure: number;
+    shear: number;
+    boundaryType: BoundaryTypes;
+  }[] = [];
   stress: Map<number, number> = new Map();
   constructor(plate1: Plate, plate2: Plate) {
     this.plates.set(plate1.index, plate1);
@@ -79,33 +123,6 @@ export class Edge {
   }
 }
 
-// const findPlateWithMatchingExternalRegion = (
-//   plates: Tectonics["plates"],
-//   currentPlate: Plate,
-//   region: PlateRegion
-// ) => {
-//   let matchingPlate = null;
-//   for (let i = 0; i < plates.size; i++) {
-//     const plate = plates.get(i);
-//     if (!plate) {
-//       continue;
-//     }
-//     if (currentPlate.index === plate.index) {
-//       continue;
-//     }
-//     if (plate.externalBorderRegions.has(region.region.properties.index)) {
-//       matchingPlate = plate;
-//       break;
-//     }
-//   }
-//   return matchingPlate;
-// };
-
-// function intersect(a: any[], b: any[]) {
-//   var setB = new Set(b);
-//   return [...new Set(a)].filter((x) => setB.has(x));
-// }
-
 export function findEdges(tectonics: Tectonics) {
   tectonics.plates.forEach((plate) => {
     // lets go through all the plate neighbors
@@ -114,7 +131,14 @@ export function findEdges(tectonics: Tectonics) {
       if (!tectonics.edges.has(edgeKey)) {
         // we have not yet created this edge pair, lets do it!
         const edge = new Edge(plate, neighborPlate);
-        const coordinates = new Map();
+        const coordinates = new Map<
+          string,
+          {
+            coordinate: Vector3;
+            region: PlateRegion;
+            neighborRegion: PlateRegion;
+          }
+        >();
 
         // now let's prowl the internal border regions
         const internalMatchingRegions = Array.from(
@@ -125,13 +149,6 @@ export function findEdges(tectonics: Tectonics) {
               properties: { index },
             },
           }) => neighborPlate.externalBorderRegions.has(index)
-        );
-
-        console.log(
-          plate.index,
-          neighborPlate.index,
-          internalMatchingRegions.length,
-          internalMatchingRegions
         );
 
         const assembleVerts = (verts: number[]) => {
@@ -146,7 +163,29 @@ export function findEdges(tectonics: Tectonics) {
           return vertsAssembled;
         };
 
-        internalMatchingRegions.forEach(({ region }) => {
+        // We should sort the regions
+        // by who has what neighbor
+        // A, B, C
+        // if B has a neihbor of both A and C, he should be in the middle
+        // const sorted = [];
+        // for (let i = 0; i < internalMatchingRegions.length; i++) {
+        //   const currentRegion = internalMatchingRegions[i];
+        //   if (!sorted.length) {
+        //     sorted.push(currentRegion);
+        //     continue;
+        //   }
+        //   const neighbor = sorted.findIndex(region => region.region.properties.neighbors.includes(currentRegion.region.properties.index));
+        //   if (neighbor) {
+        //     // we have a neighbor boy, let's prepend
+        //     continue;
+        //   }
+        //   // we dont' have a neighbor, just add to tail
+        //   sorted.push(currentRegion);
+
+        // }
+
+        internalMatchingRegions.forEach((plateRegion) => {
+          const { region } = plateRegion;
           region.properties.neighbors.forEach((neighborIndex) => {
             const neighborRegion =
               neighborPlate.internalBorderRegions.get(neighborIndex);
@@ -157,7 +196,11 @@ export function findEdges(tectonics: Tectonics) {
                 assembleVerts(neighborRegion.region.geometry.vertices).forEach(
                   (nVec3) => {
                     if (vec3.equals(nVec3)) {
-                      coordinates.set(JSON.stringify(vec3), vec3);
+                      coordinates.set(JSON.stringify(vec3), {
+                        coordinate: vec3,
+                        region: plateRegion,
+                        neighborRegion: neighborRegion,
+                      });
                     }
                   }
                 );
@@ -165,113 +208,90 @@ export function findEdges(tectonics: Tectonics) {
             }
           });
         });
-        //   // want to find coordinates which match
-        //   region.geometry.coordinates[0].forEach((coordinate) => {
-        //     const coordinateKey = edgeHashKey(coordinate);
-        //     neighborPlate.regions.forEach(({ region: neighborRegion }) => {
-        //       neighborRegion.geometry.coordinates[0].forEach((coordinate) => {
-        //         const matchCoordinateKey = edgeHashKey(coordinate);
-        //         if (coordinateKey === matchCoordinateKey) {
-        //           // console.log(
-        //           //   "match",
-        //           //   plate.index,
-        //           //   neighborPlate.index,
-        //           //   coordinate
-        //           // );
-        //           coordinates.set(
-        //             matchCoordinateKey,
-        //             polarToCartesian(
-        //               coordinate[1],
-        //               coordinate[0],
-        //               tectonics.voronoiSphere.radius
-        //             )
-        //           );
-        //         }
-        //       });
-        //     });
-        //   });
-        // });
 
-        // internalMatchingRegions.forEach(({ region }) => {
-        //   // want to find coordinates which match
-        //   region.geometry.coordinates[0].forEach((coordinate) => {
-        //     const coordinateKey = edgeHashKey(coordinate);
-        //     neighborPlate.internalBorderRegions.forEach(
-        //       ({ region: neighborRegion }) => {
-        //         neighborRegion.geometry.coordinates[0].forEach((coordinate) => {
-        //           const matchCoordinateKey = edgeHashKey(coordinate);
-        //           if (coordinateKey === matchCoordinateKey) {
-        //             // console.log(
-        //             //   "match",
-        //             //   plate.index,
-        //             //   neighborPlate.index,
-        //             //   coordinate
-        //             // );
-        //             coordinates.set(
-        //               matchCoordinateKey,
-        //               polarToCartesian(
-        //                 coordinate[1],
-        //                 coordinate[0],
-        //                 tectonics.voronoiSphere.radius
-        //               )
-        //             );
-        //           }
-        //         });
-        //       }
-        //     );
-        //   });
-        // });
+        // // Let's sort the coordinates so we can make a line connecting them
+        // const sortedEdgeRegions =  []
+        // const blah = Array.from(coordinates.values());
+        // const occupiedNeighbors = new Map<number,
+        // for (let i = 0; i < blah.length; i ++ ) {
+        //   const { region, coordinate } = blah[i];
+
+        // }
 
         edge.coordinates = Array.from(coordinates.values());
+
+        for (let j = 0; j < edge.coordinates.length; j++) {
+          const { coordinate, region, neighborRegion } = edge.coordinates[j];
+
+          const movementPlate0 = region.plate.calculateMovement(coordinate);
+          const movementPlate1 =
+            neighborRegion.plate.calculateMovement(coordinate);
+          const boundaryNormal = vectorTo(
+            region.region.properties.siteXYZ,
+            neighborRegion.region.properties.siteXYZ
+          );
+          const boundaryVector = boundaryNormal.cross(coordinate);
+
+          const { pressure, shear } = calculateStressOnEdge(
+            movementPlate0,
+            movementPlate1,
+            boundaryVector,
+            boundaryNormal
+          );
+
+          let elevation = region.plate.elevation;
+          let boundaryType = BoundaryTypes.DORMANT;
+
+          if (pressure > BOUNDARY_CONST) {
+            elevation =
+              Math.max(region.plate.elevation, neighborRegion.plate.elevation) +
+              pressure;
+            if (region.plate.oceanic && neighborRegion.plate.oceanic) {
+              // calculateElevation = calculateCollidingElevation;
+              // oceanCollision
+              boundaryType = BoundaryTypes.OCEAN_COLLISION;
+            } else if (region.plate.oceanic) {
+              // subduction
+              // tectonicBoundaryType.copy(tectonicTypeColorMap.subduction);
+              boundaryType = BoundaryTypes.SUBDUCTION;
+            } else {
+              // superduction
+              // tectonicBoundaryType.copy(tectonicTypeColorMap.superduction);
+              boundaryType = BoundaryTypes.SUPERDUCTION;
+            }
+          } else if (pressure < -BOUNDARY_CONST) {
+            elevation =
+              Math.max(region.plate.elevation, neighborRegion.plate.elevation) -
+              pressure / 4;
+            // calculateElevation = calculateDivergingElevation;
+            // diverging elevation
+            // tectonicBoundaryType.copy(tectonicTypeColorMap.diverging);
+            boundaryType = BoundaryTypes.DIVERGING;
+          } else if (shear > BOUNDARY_CONST) {
+            elevation =
+              Math.max(region.plate.elevation, neighborRegion.plate.elevation) +
+              shear / 8;
+            // calculateElevation = calculateShearingElevation;
+            // shearing elevation
+            // tectonicBoundaryType.copy(tectonicTypeColorMap.shearing);
+            boundaryType = BoundaryTypes.SHEARING;
+          } else {
+            elevation =
+              (region.plate.elevation + neighborRegion.plate.elevation) / 2;
+            // calculateElevation = calculateDormantElevation;
+            // Dormant Elevation
+            // tectonicBoundaryType.copy(tectonicTypeColorMap.dormant);
+            boundaryType = BoundaryTypes.DORMANT;
+          }
+          edge.coordinates[j].boundaryType = boundaryType;
+          edge.coordinates[j].elevation = elevation;
+          edge.coordinates[j].pressure = pressure;
+          edge.coordinates[j].shear = shear;
+        }
 
         // make sure to add him to the main class
         tectonics.edges.set(edgeKey, edge);
       }
     });
-
-    // plate.internalBorderRegions.forEach((plateRegion) => {
-    //   const matchingPlates: Plate[] = [];
-    //   // find the plate who has this region marked externalRegion
-    //   const matchingPlate = findPlateWithMatchingExternalRegion(
-    //     tectonics.plates,
-    //     plate,
-    //     plateRegion
-    //   );
-
-    //   if (!matchingPlate) {
-    //     console.warn("No matching plate");
-    //     return;
-    //   }
-
-    //   matchingPlates.push(matchingPlate);
-
-    //   const edges = new Set<number>();
-    //   const edge = new Edge();
-    //   edge.regions.set(plateRegion.region.properties.index, plateRegion);
-
-    //   // find a neighbor to this region that also exists inside the externalRegion plate
-    //   plateRegion.region.properties.neighbors.forEach((neighbor) => {
-    //     // for each neighbor, check to see if it's part of externalRegion plate
-    //     const matchingRegion = matchingPlate.regions.get(neighbor);
-    //     if (matchingRegion) {
-    //       // get intersection of coordinates
-    //       edge.regions.set(
-    //         matchingRegion.region.properties.index,
-    //         matchingRegion
-    //       );
-
-    //       // region.geometry.vertices;
-    //       intersect(
-    //         plateRegion.region.geometry.vertices,
-    //         matchingRegion.region.geometry.vertices
-    //       ).forEach((val) => edges.add(val));
-    //     }
-    //   });
-
-    //   edge.coordinates = Array.from(edges.values());
-    //   edge.plates.set(plate.index, plate);
-    //   edge.plates.set(matchingPlate.index, matchingPlate);
-    //   tectonics.edges.push(edge);
-    // });
   });
 }
