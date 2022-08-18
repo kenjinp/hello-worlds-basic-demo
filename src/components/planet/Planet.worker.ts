@@ -10,7 +10,6 @@ import { LinearSpline } from "./Spline";
 import { BoundaryTypes } from "./tectonics/Edge";
 import { Plate } from "./tectonics/Plate";
 import { Tectonics } from "./tectonics/Tectonics";
-import { expStep, remap } from "./tectonics/utils";
 
 // We're not doing anything with this yet
 export type ThreadParams = {
@@ -19,14 +18,15 @@ export type ThreadParams = {
 };
 
 const tempVector3 = new Vector3();
+const tempColor = new Color();
 const groundColor = new Color(0x55b519);
 const oceanColor = new Color(0x09c3db);
 const noColor = new Color(0x000000);
 
 let hNext: number | undefined = undefined;
 
-const subductionFn = (x: number) => {
-  return (2_000 * Math.sin(x / 50)) / x;
+const calculateSubductionElevation = (distance: number, magnitude: number) => {
+  return Math.max(-Math.abs(distance) + magnitude * 40, 0);
 };
 
 const greatCircleDistance = (a: Vector3, b: Vector3, radius: number) => {
@@ -61,12 +61,10 @@ const simpleHeight: ChunkGenerator3<ThreadParams, number> = {
           coord.boundaryType === BoundaryTypes.SUPERDUCTION ||
           coord.boundaryType === BoundaryTypes.OCEAN_COLLISION
         ) {
-          const distance = greatCircleDistance(input, coord.coordinate, radius);
-          const magnatude = edge.coordinates[c].pressure;
-          const modifier = expStep(distance, 500, magnatude);
-          if (distance < 1000) {
-            elevation += modifier;
-          }
+          const distance = input.distanceTo(coord.coordinate);
+          const magnitude = coord.elevation;
+          const modifier = calculateSubductionElevation(distance, magnitude);
+          elevation += modifier;
         }
       }
     }
@@ -155,11 +153,14 @@ const colorGenerator: ChunkGenerator3<ThreadParams, Color> = {
     // }
     // return noColor;
     if (height < seaLevel) {
-      return colorSplines[2].get(remap(height, -5, 0, 0, 1));
+      return tempColor.clone().setRGB(0, 0, -height);
+      // return colorSplines[2].get(remap(height, -5, 0, 0, 1));
     }
 
-    const c1 = colorSplines[0].get(remap(seaLevel + height, 0, 20, 0, 1));
-    return c1;
+    return tempColor.clone().setRGB(height, height, height);
+
+    // const c1 = colorSplines[0].get(remap(seaLevel + height, 0, 20, 0, 1));
+    // return c1;
     // const c2 = colorSplines[1].get(h);
 
     // return c1.lerp(c2, 1);

@@ -75,7 +75,7 @@ export const Planet: React.FC = () => {
     },
     pointsColor: "#000000",
     pointsSize: 100,
-    showPlanet: false,
+    showPlanet: true,
     seaLevel: 0,
   });
 
@@ -86,9 +86,9 @@ export const Planet: React.FC = () => {
       value: 36,
       step: 1,
     },
-    showPlates: true,
+    showPlates: false,
     showLabels: false,
-    showMovementVectors: true,
+    showMovementVectors: false,
     showInternalBorders: false,
     showPlateEdges: true,
   });
