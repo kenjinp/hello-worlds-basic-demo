@@ -26,7 +26,7 @@ const noColor = new Color(0x000000);
 let hNext: number | undefined = undefined;
 
 const calculateSubductionElevation = (distance: number, magnitude: number) => {
-  return Math.max(-Math.abs(distance) + magnitude * 40, 0);
+  return Math.max(1.0 - Math.pow(Math.abs(distance), 0.8) + magnitude * 25, 0);
 };
 
 const greatCircleDistance = (a: Vector3, b: Vector3, radius: number) => {

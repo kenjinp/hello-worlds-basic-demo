@@ -216,7 +216,7 @@ export const Planet: React.FC = () => {
           <pointsMaterial size={planet.pointsSize} vertexColors />
           <bufferGeometry ref={pointsRef} />
         </points>
-
+        {/* 
         {Number.isFinite(selected) && (
           <mesh scale={new Vector3(500, 500, 500)} position={selectedPosition}>
             <sphereGeometry />
@@ -227,7 +227,7 @@ export const Planet: React.FC = () => {
         <mesh scale={new Vector3(500, 500, 500)} position={target}>
           <sphereGeometry />
           <meshBasicMaterial color="blue" />
-        </mesh>
+        </mesh> */}
 
         <TectonicsComponent
           numberOfPlates={tectonic.numberOfPlates}
