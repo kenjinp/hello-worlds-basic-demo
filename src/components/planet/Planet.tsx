@@ -7,10 +7,11 @@ import {
   Color,
   Float32BufferAttribute,
   Mesh,
-  MeshBasicMaterial,
+  MeshStandardMaterial,
   Sphere,
   Vector3,
 } from "three";
+import { randomSpherePoint } from "../moon/Moon.math";
 import planetWorker from "./Planet.worker?worker";
 import { EdgePoints } from "./tectonics/Edges";
 import { PlateMovement } from "./tectonics/Movement";
@@ -21,7 +22,7 @@ import {
 } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
-const material = new MeshBasicMaterial({ vertexColors: true });
+const material = new MeshStandardMaterial({ vertexColors: true });
 
 const FancyPlanet: React.FC<
   React.PropsWithChildren<{ radius: number; seaLevel: number }>
@@ -29,10 +30,20 @@ const FancyPlanet: React.FC<
   const planetRef = React.useRef();
   const { camera } = useThree();
   const tectonics = useTectonics();
+  const subduction = useControls("subduction", {
+    exponential: 0.8,
+    modifier: 100,
+  });
 
   React.useEffect(() => {
     planetRef.current.material = material;
   }, [planetRef]);
+
+  const [randomTestPoint] = React.useState(() => {
+    const [x, y, z] = randomSpherePoint(0, 0, 0, radius);
+    return new Vector3(x, y, z);
+  });
+
   return (
     <HelloPlanet
       ref={planetRef}
@@ -46,6 +57,8 @@ const FancyPlanet: React.FC<
       data={{
         tectonics,
         seaLevel,
+        subductionConstants: subduction,
+        randomTestPoint,
       }}
     >
       {children}
@@ -90,7 +103,8 @@ export const Planet: React.FC = () => {
     showLabels: false,
     showMovementVectors: false,
     showInternalBorders: false,
-    showPlateEdges: true,
+    showPlateEdges: false,
+    showPoints: false,
   });
 
   const { camera } = useThree();
@@ -212,7 +226,7 @@ export const Planet: React.FC = () => {
           <icosahedronGeometry args={[1, 15]} />
           <meshBasicMaterial vertexColors visible={false} />
         </mesh>
-        <points>
+        <points visible={tectonic.showPoints}>
           <pointsMaterial size={planet.pointsSize} vertexColors />
           <bufferGeometry ref={pointsRef} />
         </points>

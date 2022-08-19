@@ -10,11 +10,17 @@ import { LinearSpline } from "./Spline";
 import { BoundaryTypes } from "./tectonics/Edge";
 import { Plate } from "./tectonics/Plate";
 import { Tectonics } from "./tectonics/Tectonics";
+import { remap } from "./tectonics/utils";
 
 // We're not doing anything with this yet
 export type ThreadParams = {
   tectonics: Tectonics;
   seaLevel: number;
+  subductionConstants: {
+    exponential: number;
+    modifier: number;
+  };
+  randomTestPoint: Vector3;
 };
 
 const tempVector3 = new Vector3();
@@ -25,30 +31,48 @@ const noColor = new Color(0x000000);
 
 let hNext: number | undefined = undefined;
 
-const calculateSubductionElevation = (distance: number, magnitude: number) => {
-  return Math.max(1.0 - Math.pow(Math.abs(distance), 0.8) + magnitude * 25, 0);
-};
-
-const greatCircleDistance = (a: Vector3, b: Vector3, radius: number) => {
-  const distance = Math.sqrt(
-    (b.x - a.x) ** 2 + (b.y - a.y) ** 2 + (b.z - a.z) ** 2
+const calculateSubductionElevation = (
+  distance: number,
+  magnitude: number,
+  exponential: number = 0.8,
+  modifier: number = 100
+) => {
+  return Math.max(
+    1.0 - Math.pow(Math.abs(distance), exponential) + magnitude * modifier,
+    0
   );
-  const phi = Math.asin(distance / 2 / radius);
-  return 2 * phi * radius;
 };
 
-const noise = new Noise({
-  ...DEFAULT_NOISE_PARAMS,
-  seed: "banana", // <-important
-  height: 50.0,
-  scale: 5000.0,
-});
-const simpleHeight: ChunkGenerator3<ThreadParams, number> = {
+let noise: Noise;
+let mountainNoise: Noise;
+
+const tectonicHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
   // maybe we can use this as a base for an ocean
-  get({ input, data: { tectonics }, radius }) {
+  get({ input, data: { tectonics, subductionConstants }, radius }) {
+    if (!noise) {
+      noise = new Noise({
+        ...DEFAULT_NOISE_PARAMS,
+        seed: "banana", // <-important
+        height: 50.0,
+        scale: radius / 5,
+      });
+    }
+    if (!mountainNoise) {
+      mountainNoise = new Noise({
+        ...DEFAULT_NOISE_PARAMS,
+        seed: "apple", // <-important
+        height: 2,
+        scale: radius / 10,
+      });
+    }
+    const n = noise.get(input.x, input.y, input.z);
+    const m = mountainNoise.get(input.x, input.y, input.z);
+
     let elevation =
       Tectonics.findPlateFromCartesian(tectonics, input, hNext)?.plate
         .elevation || 0;
+    elevation *= n;
+    let subductionElevation = elevation;
     // let elevation = 0;
     // let's find subduction points
     const edgeArray = Array.from(tectonics.edges.values());
@@ -63,8 +87,33 @@ const simpleHeight: ChunkGenerator3<ThreadParams, number> = {
         ) {
           const distance = input.distanceTo(coord.coordinate);
           const magnitude = coord.elevation;
-          const modifier = calculateSubductionElevation(distance, magnitude);
-          elevation += modifier;
+          const modifier = calculateSubductionElevation(
+            distance,
+            magnitude,
+            subductionConstants.exponential,
+            // Math.max(-coord.pressure + 1, 0.78),
+            subductionConstants.modifier
+          );
+          const val = modifier + 1 * n;
+          if (val) {
+            subductionElevation += modifier + 1 * m * modifier;
+            // subductionElevation += Math.max(
+            //   modifier + 1 * n,
+            // );
+          }
+          // elevation = modifier + 1 * n;
+        }
+        if (coord.boundaryType === BoundaryTypes.DIVERGING) {
+          const distance = input.distanceTo(coord.coordinate);
+          const magnitude = coord.elevation;
+          const modifier = calculateSubductionElevation(
+            distance,
+            magnitude,
+
+            subductionConstants.exponential * 1.1,
+            subductionConstants.modifier
+          );
+          elevation -= modifier + 1 * m * modifier;
         }
       }
     }
@@ -76,8 +125,29 @@ const simpleHeight: ChunkGenerator3<ThreadParams, number> = {
     //     elevation += subductionFn(distance);
     //   });
     // });
-    return noise.get(input.x, input.y, input.z) * elevation;
-    // return elevation;
+    // return MathUtils.lerp(noise.get(input.x, input.y, input.z) elevation
+    return subductionElevation ? subductionElevation + elevation : elevation;
+  },
+};
+
+const testMountainHeight: ChunkGenerator3<ThreadParams, number> = {
+  // maybe we can use this as a base for an ocean
+  get({
+    input,
+    data: { tectonics, subductionConstants, randomTestPoint },
+    radius,
+  }) {
+    let elevation = 0;
+    const distance = input.distanceTo(randomTestPoint);
+    const magnitude = 1;
+    const modifier = calculateSubductionElevation(
+      distance,
+      magnitude,
+      subductionConstants.exponential,
+      subductionConstants.modifier
+    );
+    elevation += modifier + noise.get(input.x, input.y, input.z) * 0.5;
+    return elevation;
   },
 };
 
@@ -127,7 +197,9 @@ const colorSplines = [
 
 // Temp / Aridity
 colorSplines[0].addPoint(0.0, new Color(0x37a726));
-colorSplines[0].addPoint(0.5, new Color(0x526b48));
+colorSplines[0].addPoint(0.05, new Color(0x214711));
+colorSplines[0].addPoint(0.4, new Color(0x526b48));
+colorSplines[0].addPoint(0.9, new Color(0xab7916));
 colorSplines[0].addPoint(1.0, new Color(0xbab3a2));
 
 // Humid
@@ -137,8 +209,8 @@ colorSplines[0].addPoint(1.0, new Color(0xbab3a2));
 
 // sea
 colorSplines[2].addPoint(0, new Color(0x10313e));
-colorSplines[2].addPoint(0.03, new Color(0x1d5a67));
-colorSplines[2].addPoint(0.05, new Color(0x469280));
+colorSplines[2].addPoint(0.98, new Color(0x1d5a67));
+colorSplines[2].addPoint(0.995, new Color(0x469280));
 
 const colorGenerator: ChunkGenerator3<ThreadParams, Color> = {
   get({ input, worldPosition, data: { tectonics, seaLevel }, radius }) {
@@ -153,14 +225,14 @@ const colorGenerator: ChunkGenerator3<ThreadParams, Color> = {
     // }
     // return noColor;
     if (height < seaLevel) {
-      return tempColor.clone().setRGB(0, 0, -height);
-      // return colorSplines[2].get(remap(height, -5, 0, 0, 1));
+      // return tempColor.clone().setRGB(0, 0, -height);
+      return colorSplines[2].get(remap(height, -20, 0, 0, 1));
     }
 
-    return tempColor.clone().setRGB(height, height, height);
+    // return tempColor.clone().setRGB(height, height, height);
 
-    // const c1 = colorSplines[0].get(remap(seaLevel + height, 0, 20, 0, 1));
-    // return c1;
+    const c1 = colorSplines[0].get(remap(seaLevel + height, 0, 100, 0, 1));
+    return c1;
     // const c2 = colorSplines[1].get(h);
 
     // return c1.lerp(c2, 1);
@@ -168,6 +240,6 @@ const colorGenerator: ChunkGenerator3<ThreadParams, Color> = {
 };
 
 createThreadedPlanetWorker<ThreadParams>({
-  heightGenerator: simpleHeight,
+  heightGenerator: tectonicHeightGenerator,
   colorGenerator,
 });

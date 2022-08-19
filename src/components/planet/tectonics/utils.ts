@@ -40,3 +40,11 @@ export function remap(
 ) {
   return ((value - x1) * (y2 - x2)) / (y1 - x1) + x2;
 }
+
+export function greatCircleDistance(a: Vector3, b: Vector3, radius: number) {
+  const distance = Math.sqrt(
+    (b.x - a.x) ** 2 + (b.y - a.y) ** 2 + (b.z - a.z) ** 2
+  );
+  const phi = Math.asin(distance / 2 / radius);
+  return 2 * phi * radius;
+}
