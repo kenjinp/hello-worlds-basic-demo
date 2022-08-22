@@ -2,8 +2,8 @@ lockfileVersion: 5.4
 
 specifiers:
   '@hello-worlds/core': 0.0.5
-  '@hello-worlds/planets': 0.0.6
-  '@hello-worlds/react': 0.0.6
+  '@hello-worlds/planets': 0.0.8
+  '@hello-worlds/react': 0.0.8
   '@react-three/drei': ^9.17.1
   '@react-three/fiber': ^8.2.0
   '@react-three/postprocessing': ^2.5.1
@@ -35,8 +35,8 @@ specifiers:
 
 dependencies:
   '@hello-worlds/core': 0.0.5
-  '@hello-worlds/planets': 0.0.6_6dnixzxk34dh6ntwxyb7fnv6xm
-  '@hello-worlds/react': 0.0.6_lgizpzjquga6rdjnj6k5kr7zfi
+  '@hello-worlds/planets': 0.0.8_6dnixzxk34dh6ntwxyb7fnv6xm
+  '@hello-worlds/react': 0.0.8_ccmbzjpeg7yn75hsszvk4bcvmy
   '@react-three/drei': 9.17.1_qjhrljb2mtzgjxqgwzxrcgr5me
   '@react-three/fiber': 8.2.0_5kidazjkmgjhxqotnaqokpbepa
   '@react-three/postprocessing': 2.5.1_noqc5hrtllbymtk7u4tau3xafa
@@ -446,8 +446,8 @@ packages:
       rand-seed: 1.0.1
     dev: false
 
-  /@hello-worlds/planets/0.0.6_6dnixzxk34dh6ntwxyb7fnv6xm:
-    resolution: {integrity: sha512-i9k5A84IYANvWNSkukN9m/VpvrjLkdcKg3d+U5082rpMImfaDX4gomLDar45Z3h10j3m1jS+xyzICf+7Ncyzeg==}
+  /@hello-worlds/planets/0.0.8_6dnixzxk34dh6ntwxyb7fnv6xm:
+    resolution: {integrity: sha512-J6Bf38LlRg67s3ZASWb5FVTdM0fYj7+LiUrANFQirmvhmvdKyc+sc9qNN34dGkGB8Bgxx43jSbQPkYZz6BAXpg==}
     peerDependencies:
       '@hello-worlds/core': 0.0.5
       three: ^0.142.0
@@ -458,18 +458,18 @@ packages:
       worktank: 2.3.0
     dev: false
 
-  /@hello-worlds/react/0.0.6_lgizpzjquga6rdjnj6k5kr7zfi:
-    resolution: {integrity: sha512-6bNadIi533N8bXonuK8P+NfQb3egoWzmCM96vJ9xL6U0jc+RE1qeB0nGZfK9AZUdaGfb4z28fcjFrCzeWClaVw==}
+  /@hello-worlds/react/0.0.8_ccmbzjpeg7yn75hsszvk4bcvmy:
+    resolution: {integrity: sha512-EQ0qofVeBzR8QnpWpzKWQuENO9/c+Qvus+OkakPbAyvWNnmwO/hpddXWy7flf7t1liHzb6+jv+PUrBnhCqXwvg==}
     peerDependencies:
       '@hello-worlds/core': 0.0.5
-      '@hello-worlds/planets': 0.0.6
+      '@hello-worlds/planets': 0.0.8
       '@react-three/fiber': ^8.0.27
       react: ^18.0.0
       react-dom: ^18.0.0
       three: ^0.142.0
     dependencies:
       '@hello-worlds/core': 0.0.5
-      '@hello-worlds/planets': 0.0.6_6dnixzxk34dh6ntwxyb7fnv6xm
+      '@hello-worlds/planets': 0.0.8_6dnixzxk34dh6ntwxyb7fnv6xm
       '@react-three/drei': 9.17.1_qjhrljb2mtzgjxqgwzxrcgr5me
       '@react-three/fiber': 8.2.0_5kidazjkmgjhxqotnaqokpbepa
       react: 18.2.0

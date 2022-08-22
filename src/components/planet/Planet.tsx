@@ -24,6 +24,8 @@ import { VoronoiSphere } from "./voronoi/Voronoi";
 
 const material = new MeshStandardMaterial({ vertexColors: true });
 
+// const MemoPlanet = React.memo(HelloPlanet);
+
 const FancyPlanet: React.FC<
   React.PropsWithChildren<{ radius: number; seaLevel: number }>
 > = ({ radius, seaLevel, children }) => {
@@ -36,7 +38,9 @@ const FancyPlanet: React.FC<
   });
 
   React.useEffect(() => {
-    planetRef.current.material = material;
+    if (planetRef.current) {
+      planetRef.current.material = material;
+    }
   }, [planetRef]);
 
   const [randomTestPoint] = React.useState(() => {
@@ -44,29 +48,46 @@ const FancyPlanet: React.FC<
     return new Vector3(x, y, z);
   });
 
+  const initialData = React.useMemo(
+    () => ({
+      tectonics,
+    }),
+    [tectonics]
+  );
+
+  const data = React.useMemo(
+    () => ({
+      seaLevel,
+      subductionConstants: subduction,
+      randomTestPoint,
+    }),
+    [subduction, seaLevel]
+  );
+
+  const planetProps = React.useMemo(
+    () => ({
+      radius,
+      minCellSize: 25,
+      minCellResolution: 125,
+    }),
+    [radius]
+  );
+
   return (
     <HelloPlanet
       ref={planetRef}
-      planetProps={{
-        radius,
-        minCellSize: 25,
-        minCellResolution: 125,
-      }}
+      planetProps={planetProps}
       lodOrigin={camera.position}
       worker={planetWorker}
-      data={{
-        tectonics,
-        seaLevel,
-        subductionConstants: subduction,
-        randomTestPoint,
-      }}
+      initialData={initialData}
+      data={data}
     >
       {children}
     </HelloPlanet>
   );
 };
 
-export const Planet: React.FC = () => {
+export const Planet: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const planet = useControls("planet", {
     planetRadius: {
       min: 100,
@@ -254,7 +275,9 @@ export const Planet: React.FC = () => {
             <FancyPlanet
               radius={planet.planetRadius}
               seaLevel={planet.seaLevel}
-            ></FancyPlanet>
+            >
+              {children}
+            </FancyPlanet>
           )}
 
           {tectonic.showMovementVectors && <PlateMovement />}

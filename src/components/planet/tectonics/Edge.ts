@@ -87,14 +87,16 @@ export class Edge {
   // regions: Map<number, PlateRegion> = new Map();
   coordinates: {
     coordinate: Vector3;
-    region: PlateRegion;
-    neighborRegion: PlateRegion;
+    regionPlateIndex: PlateRegion["plate"]["index"];
+    regionRegionIndex: PlateRegion["region"]["properties"]["index"];
+    neighborPlateIndex: PlateRegion["plate"]["index"];
+    neighborRegionIndex: PlateRegion["region"]["properties"]["index"];
     elevation: number;
     pressure: number;
     shear: number;
     boundaryType: BoundaryTypes;
   }[] = [];
-  stress: Map<number, number> = new Map();
+  // stress: Map<number, number> = new Map();
   constructor(plate1: Plate, plate2: Plate) {
     this.plates.set(plate1.index, plate1);
     this.plates.set(plate2.index, plate2);
@@ -135,8 +137,10 @@ export function findEdges(tectonics: Tectonics) {
           string,
           {
             coordinate: Vector3;
-            region: PlateRegion;
-            neighborRegion: PlateRegion;
+            regionPlateIndex: PlateRegion["plate"]["index"];
+            regionRegionIndex: PlateRegion["region"]["properties"]["index"];
+            neighborPlateIndex: PlateRegion["plate"]["index"];
+            neighborRegionIndex: PlateRegion["region"]["properties"]["index"];
           }
         >();
 
@@ -190,16 +194,17 @@ export function findEdges(tectonics: Tectonics) {
             const neighborRegion =
               neighborPlate.internalBorderRegions.get(neighborIndex);
             if (neighborRegion) {
-              console.log({ neighborRegion, region });
-
               assembleVerts(region.geometry.vertices).forEach((vec3) => {
                 assembleVerts(neighborRegion.region.geometry.vertices).forEach(
                   (nVec3) => {
                     if (vec3.equals(nVec3)) {
                       coordinates.set(JSON.stringify(vec3), {
                         coordinate: vec3,
-                        region: plateRegion,
-                        neighborRegion: neighborRegion,
+                        regionPlateIndex: plateRegion.plate.index,
+                        regionRegionIndex: plateRegion.region.properties.index,
+                        neighborRegionIndex:
+                          neighborRegion.region.properties.index,
+                        neighborPlateIndex: neighborRegion.plate.index,
                       });
                     }
                   }
@@ -221,11 +226,20 @@ export function findEdges(tectonics: Tectonics) {
         edge.coordinates = Array.from(coordinates.values());
 
         for (let j = 0; j < edge.coordinates.length; j++) {
-          const { coordinate, region, neighborRegion } = edge.coordinates[j];
-
-          const movementPlate0 = region.plate.calculateMovement(coordinate);
-          const movementPlate1 =
-            neighborRegion.plate.calculateMovement(coordinate);
+          const {
+            coordinate,
+            regionPlateIndex,
+            regionRegionIndex,
+            neighborRegionIndex,
+            neighborPlateIndex,
+          } = edge.coordinates[j];
+          const plate = tectonics.plates.get(regionPlateIndex)!;
+          const neighborPlate = tectonics.plates.get(neighborPlateIndex)!;
+          const movementPlate0 = plate.calculateMovement(coordinate);
+          const movementPlate1 = neighborPlate.calculateMovement(coordinate);
+          const region = plate.regions.get(regionRegionIndex)!;
+          const neighborRegion =
+            neighborPlate.regions.get(neighborRegionIndex)!;
           const boundaryNormal = vectorTo(
             region.region.properties.siteXYZ,
             neighborRegion.region.properties.siteXYZ
@@ -239,7 +253,7 @@ export function findEdges(tectonics: Tectonics) {
             boundaryNormal
           );
 
-          let elevation = region.plate.elevation;
+          let elevation = plate.elevation;
           let boundaryType = BoundaryTypes.DORMANT;
 
           if (pressure > BOUNDARY_CONST) {

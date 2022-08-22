@@ -1,5 +1,5 @@
 import {
-  ChunkGenerator3,
+  ChunkGenerator3Initializer,
   createThreadedPlanetWorker,
   DEFAULT_NOISE_PARAMS,
   Lerp,
@@ -14,7 +14,7 @@ import { remap } from "./tectonics/utils";
 
 // We're not doing anything with this yet
 export type ThreadParams = {
-  tectonics: Tectonics;
+  tectonics?: Tectonics;
   seaLevel: number;
   subductionConstants: {
     exponential: number;
@@ -24,31 +24,36 @@ export type ThreadParams = {
 };
 
 const tempVector3 = new Vector3();
-const tempColor = new Color();
-const groundColor = new Color(0x55b519);
-const oceanColor = new Color(0x09c3db);
-const noColor = new Color(0x000000);
 
 let hNext: number | undefined = undefined;
-
-const calculateSubductionElevation = (
+let tectonics: Tectonics;
+// DONT USE MATH.POW!
+function calculateSubductionElevation(
   distance: number,
   magnitude: number,
   exponential: number = 0.8,
   modifier: number = 100
-) => {
-  return Math.max(
-    1.0 - Math.pow(Math.abs(distance), exponential) + magnitude * modifier,
-    0
-  );
-};
+) {
+  // const absDistance = Math.abs(distance);
+  // const powValue = Math.pow(absDistance, exponential);
+  const mountainHeight = (100 * Math.sin(distance)) / distance;
+  return Math.max(mountainHeight, 0);
+  // return 0.001;
+}
 
 let noise: Noise;
 let mountainNoise: Noise;
 
-const tectonicHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
-  // maybe we can use this as a base for an ocean
-  get({ input, data: { tectonics, subductionConstants }, radius }) {
+const tectonicHeightGenerator: ChunkGenerator3Initializer<
+  ThreadParams,
+  number,
+  { tectonics: Tectonics }
+> =
+  ({ initialData: { tectonics: mainTectonics } }) =>
+  ({ input, data: { subductionConstants }, radius }) => {
+    if (!tectonics && mainTectonics) {
+      tectonics = mainTectonics;
+    }
     if (!noise) {
       noise = new Noise({
         ...DEFAULT_NOISE_PARAMS,
@@ -85,6 +90,7 @@ const tectonicHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
           coord.boundaryType === BoundaryTypes.SUPERDUCTION ||
           coord.boundaryType === BoundaryTypes.OCEAN_COLLISION
         ) {
+          // This is bad, distanceTo is expensive
           const distance = input.distanceTo(coord.coordinate);
           const magnitude = coord.elevation;
           const modifier = calculateSubductionElevation(
@@ -127,8 +133,7 @@ const tectonicHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
     // });
     // return MathUtils.lerp(noise.get(input.x, input.y, input.z) elevation
     return subductionElevation ? subductionElevation + elevation : elevation;
-  },
-};
+  };
 
 const testMountainHeight: ChunkGenerator3<ThreadParams, number> = {
   // maybe we can use this as a base for an ocean
@@ -212,8 +217,9 @@ colorSplines[2].addPoint(0, new Color(0x10313e));
 colorSplines[2].addPoint(0.98, new Color(0x1d5a67));
 colorSplines[2].addPoint(0.995, new Color(0x469280));
 
-const colorGenerator: ChunkGenerator3<ThreadParams, Color> = {
-  get({ input, worldPosition, data: { tectonics, seaLevel }, radius }) {
+const colorGenerator: ChunkGenerator3Initializer<ThreadParams, Color> =
+  () =>
+  ({ input, worldPosition, data: { seaLevel }, radius }) => {
     const height = input.z;
     // const finding = Tectonics.findPlateFromCartesian(
     //   tectonics,
@@ -236,8 +242,7 @@ const colorGenerator: ChunkGenerator3<ThreadParams, Color> = {
     // const c2 = colorSplines[1].get(h);
 
     // return c1.lerp(c2, 1);
-  },
-};
+  };
 
 createThreadedPlanetWorker<ThreadParams>({
   heightGenerator: tectonicHeightGenerator,

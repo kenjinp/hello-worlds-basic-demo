@@ -66,7 +66,6 @@ export class Tectonics {
       },
       0
     );
-    console.log({ edgeSize, totalNeighbors });
     console.assert(
       edgeSize === totalNeighbors / 2,
       "Edge keys collision detected"

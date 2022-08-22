@@ -37,7 +37,7 @@ export const TectonicsComponent: React.FC<
 }) => {
   const tectonics = React.useMemo(
     () => new TectonicsImplementation(voronoiSphere, numberOfPlates),
-    [voronoiSphere, numberOfPlates]
+    [numberOfPlates]
   );
 
   const [mat] = React.useState(new MeshBasicMaterial({ vertexColors: true }));

@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@hello-worlds/core": "0.0.5",
-    "@hello-worlds/planets": "0.0.6",
-    "@hello-worlds/react": "0.0.6",
+    "@hello-worlds/planets": "0.0.8",
+    "@hello-worlds/react": "0.0.8",
     "@react-three/drei": "^9.17.1",
     "@react-three/fiber": "^8.2.0",
     "@react-three/postprocessing": "^2.5.1",
