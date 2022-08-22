@@ -1,5 +1,5 @@
 import {
-  ChunkGenerator3,
+  ChunkGenerator3Initializer,
   createThreadedPlanetWorker,
   Noise,
   NOISE_STYLES,
@@ -36,9 +36,10 @@ function smoothMax(a: number, b: number, k: number) {
   return a * h + b * (1 - h) - k * h * (1 - h);
 }
 
-const simpleHeight: ChunkGenerator3<ThreadParams, number> = {
+const simpleHeight: ChunkGenerator3Initializer<ThreadParams, number> =
+  () =>
   // maybe we can use this as a base for an ocean
-  get({ input, data: { rimWidth, rimSteepness, randomPoints, smoothness } }) {
+  ({ input, data: { rimWidth, rimSteepness, randomPoints, smoothness } }) => {
     const noise = new Noise({
       octaves: 20,
       persistence: 0.707,
@@ -83,17 +84,16 @@ const simpleHeight: ChunkGenerator3<ThreadParams, number> = {
       noise.get(input.x + offset, input.y + offset, input.z + offset) +
       craterHeight
     );
-  },
-};
+  };
 
 const groundColor = new Color(0x8c7961);
 
-const simpleColor: ChunkGenerator3<ThreadParams, Color> = {
+const simpleColor: ChunkGenerator3Initializer<ThreadParams, Color> =
+  () =>
   // this could be just sent to frag shader lol
-  get({ worldPosition }) {
+  ({ worldPosition }) => {
     return groundColor;
-  },
-};
+  };
 
 createThreadedPlanetWorker<ThreadParams>({
   heightGenerator: simpleHeight,

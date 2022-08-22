@@ -2,6 +2,7 @@ import { OrbitCamera, usePlanet } from "@hello-worlds/react";
 import { Stars } from "@react-three/drei";
 import { Vector3 } from "three";
 import BasicScene from "./components/basic-scene/BasicScene";
+import Moon from "./components/moon/Moon";
 import { Planet } from "./components/planet/Planet";
 
 const StarMap = () => {
@@ -33,7 +34,7 @@ export default function App() {
             <StarMap />
           </Planet>
           <group position={new Vector3(100_000, 100_000, 0)}>
-            {/* <Moon /> */}
+            <Moon />
           </group>
         </group>
       </BasicScene>
