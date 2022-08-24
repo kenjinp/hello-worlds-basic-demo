@@ -166,7 +166,7 @@ export const EdgePoints: React.FC = () => {
     <group>
       {/* {Labels} */}
       {/* <EdgeLines /> */}
-      <instancedMesh ref={instancesRef} args={[null, null, 100_000]}>
+      <instancedMesh ref={instancesRef} args={[, , 100_000]}>
         <sphereBufferGeometry args={[100, 32, 32]} />
         <meshBasicMaterial />
       </instancedMesh>

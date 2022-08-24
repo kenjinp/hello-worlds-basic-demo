@@ -91,7 +91,7 @@ export const Planet: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const planet = useControls("planet", {
     planetRadius: {
       min: 100,
-      max: 5_000 * 4,
+      max: 6_000_000,
       value: 5_000 * 4,
       step: 10,
     },

@@ -1,9 +1,9 @@
-import { OrbitCamera, usePlanet } from "@hello-worlds/react";
-import { Stars } from "@react-three/drei";
+import { usePlanet } from "@hello-worlds/react";
+import { OrbitControls, Stars } from "@react-three/drei";
 import { Vector3 } from "three";
 import BasicScene from "./components/basic-scene/BasicScene";
 import Moon from "./components/moon/Moon";
-import { Planet } from "./components/planet/Planet";
+import PolarHashTest from "./components/planet/polar-spatial-hash/PolarHashTest";
 
 const StarMap = () => {
   const planet = usePlanet();
@@ -28,11 +28,12 @@ export default function App() {
           </a>
         </Html> */}
         <group>
-          {/* <OrbitControls /> */}
-          <Planet>
+          <PolarHashTest />
+          <OrbitControls />
+          {/* <Planet>
             <OrbitCamera />
             <StarMap />
-          </Planet>
+          </Planet> */}
           <group position={new Vector3(100_000, 100_000, 0)}>
             <Moon />
           </group>

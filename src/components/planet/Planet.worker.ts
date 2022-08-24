@@ -70,7 +70,9 @@ const tectonicHeightGenerator: ChunkGenerator3Initializer<
         scale: radius / 10,
       });
     }
+
     const n = noise.get(input.x, input.y, input.z);
+
     const m = mountainNoise.get(input.x, input.y, input.z);
 
     let elevation =
