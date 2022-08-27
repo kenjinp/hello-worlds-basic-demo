@@ -1,5 +1,6 @@
 import { Color, Vector3 } from "three";
 import { Region } from "../voronoi/Voronoi";
+import { Edge } from "./Edge";
 import { PlateRegion } from "./PlateRegion";
 
 export interface PlateProps {
@@ -17,6 +18,7 @@ export interface PlateProps {
 export class Plate {
   index: number;
   name: string;
+  edges: Edge[] = [];
   color: Color;
   driftAxis: Vector3;
   driftRate: number;

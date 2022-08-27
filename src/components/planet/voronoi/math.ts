@@ -6,6 +6,10 @@ export type LatLong = [number, number];
 const RAD2DEG = 180 / Math.PI;
 const tempVec3 = new Vector3();
 
+export function sat(x: number) {
+  return Math.min(Math.max(x, 0.0), 1.0);
+}
+
 export function polarToCartesian(
   lat: number,
   long: number,
@@ -23,6 +27,10 @@ export function polarToCartesian(
     .clone();
 }
 
+export function longLatToCartesian(longLat: LongLat, radius: number) {
+  return polarToCartesian(longLat[0], longLat[1], radius);
+}
+
 export function cartesianToPolar(coordinates: Vector3): LongLat {
   const lon = Math.atan2(coordinates.x, coordinates.z) * RAD2DEG;
   const length = Math.sqrt(
@@ -32,6 +40,19 @@ export function cartesianToPolar(coordinates: Vector3): LongLat {
 
   return [lon, lat];
 }
+
+// herm herm
+// export function addGreatCircleDistanceToPolar(
+//   startingLongLat: LongLat,
+//   distanceLong: number,
+//   distanceLat: number,
+//   radius: number
+// ) {
+//   const [long, lat] = startingLongLat;
+//   const phi = ((90 - lat) * Math.PI) / 180;
+//   const theta = ((90 - long) * Math.PI) / 180;
+
+// }
 
 export function fibonacciSphere(
   numberOfPoints: number,

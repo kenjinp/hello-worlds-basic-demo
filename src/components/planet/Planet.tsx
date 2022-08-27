@@ -9,7 +9,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   Sphere,
-  Vector3,
+  Vector3
 } from "three";
 import { randomSpherePoint } from "../moon/Moon.math";
 import planetWorker from "./Planet.worker?worker";
@@ -18,7 +18,7 @@ import { PlateMovement } from "./tectonics/Movement";
 import { PlateLabels } from "./tectonics/PlateLabel";
 import {
   TectonicsComponent,
-  useTectonics,
+  useTectonics
 } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
@@ -33,7 +33,7 @@ const FancyPlanet: React.FC<
   const { camera } = useThree();
   const tectonics = useTectonics();
   const subduction = useControls("subduction", {
-    exponential: 0.8,
+    exponential: 0.005,
     modifier: 100,
   });
 
@@ -103,7 +103,7 @@ export const Planet: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     },
     numberPoints: {
       min: 32,
-      max: 50_000,
+      // max: 50_000,
       value: 10_000,
       step: 10,
     },

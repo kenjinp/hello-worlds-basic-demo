@@ -3,12 +3,11 @@ import {
   createThreadedPlanetWorker,
   DEFAULT_NOISE_PARAMS,
   Lerp,
-  Noise,
+  Noise
 } from "@hello-worlds/planets";
 import { Color, Vector3 } from "three";
 import { LinearSpline } from "./Spline";
 import { BoundaryTypes } from "./tectonics/Edge";
-import { Plate } from "./tectonics/Plate";
 import { Tectonics } from "./tectonics/Tectonics";
 import { remap } from "./tectonics/utils";
 
@@ -27,6 +26,7 @@ const tempVector3 = new Vector3();
 
 let hNext: number | undefined = undefined;
 let tectonics: Tectonics;
+
 // DONT USE MATH.POW!
 function calculateSubductionElevation(
   distance: number,
@@ -36,92 +36,113 @@ function calculateSubductionElevation(
 ) {
   // const absDistance = Math.abs(distance);
   // const powValue = Math.pow(absDistance, exponential);
-  const mountainHeight = (100 * Math.sin(distance)) / distance;
-  return Math.max(mountainHeight, 0);
-  // return 0.001;
+  // const mountainHeight = (100 * Math.sin(distance)) / distance;
+  // return Math.max(mountainHeight, 0);
+  return 0.001
 }
 
-let noise: Noise;
-let mountainNoise: Noise;
-
+function calculateMountainElevation(
+  distance: number,
+  // magnitude: number,
+  width: number = 0.8,
+  height: number = 100,
+  minPossibleHeight: number = 0
+) {
+  // const absDistance = Math.abs(distance);
+  // const powValue = Math.pow(absDistance, exponential);
+  // const mountainHeight = (100 * Math.sin(distance)) / distance;
+  // return Math.max(mountainHeight, 0);
+  return Math.max(-Math.abs(distance * width) + height, minPossibleHeight)
+}
 const tectonicHeightGenerator: ChunkGenerator3Initializer<
   ThreadParams,
   number,
   { tectonics: Tectonics }
 > =
-  ({ initialData: { tectonics: mainTectonics } }) =>
-  ({ input, data: { subductionConstants }, radius }) => {
-    if (!tectonics && mainTectonics) {
-      tectonics = mainTectonics;
-    }
-    if (!noise) {
-      noise = new Noise({
+  ({ initialData: { tectonics: mainTectonics }, radius }) => {
+      const noise = new Noise({
         ...DEFAULT_NOISE_PARAMS,
         seed: "banana", // <-important
         height: 50.0,
         scale: radius / 5,
       });
-    }
-    if (!mountainNoise) {
-      mountainNoise = new Noise({
+      const mountainNoise2 = new Noise({
         ...DEFAULT_NOISE_PARAMS,
-        seed: "apple", // <-important
-        height: 2,
-        scale: radius / 10,
+        octaves: 2,
+        seed: "kiwi", // <-important
+        height: 10000.0,
+        scale: radius / 2,
       });
+    const mountainNoise = new Noise({
+        ...DEFAULT_NOISE_PARAMS,
+        octaves: 1,
+        seed: "apple", // <-important
+        height: 10000.0,
+        scale: radius,
+      });
+  return ({ input, data: { subductionConstants }, radius }) => {
+    if (!tectonics && mainTectonics) {
+      tectonics = mainTectonics;
     }
 
-    const n = noise.get(input.x, input.y, input.z);
+    const x = mountainNoise2.get(input.x, input.y, input.z);
+    const m = mountainNoise.get(input.x + x, input.y + x, input.z + x);
+    const n = noise.get(input.x + m, input.y + m, input.z + m); // warped
 
-    const m = mountainNoise.get(input.x, input.y, input.z);
+    let plateRegion =
+      Tectonics.findPlateFromCartesian(tectonics, input, hNext)!;
+    // let elevation = plateRegion.plate.elevation;
+    // elevation *= n;
+    let elevation = plateRegion.plate.elevation;
 
-    let elevation =
-      Tectonics.findPlateFromCartesian(tectonics, input, hNext)?.plate
-        .elevation || 0;
-    elevation *= n;
-    let subductionElevation = elevation;
-    // let elevation = 0;
-    // let's find subduction points
-    const edgeArray = Array.from(tectonics.edges.values());
+    // plateRegion.plate.elevation;
+    // plateRegion.plate.neighbors.forEach()
+    
+
+    // const edgeArray = Array.from(tectonics.edges.values());
+    const edgeArray = plateRegion.plate.edges
     for (let e = 0; e < edgeArray.length; e++) {
       const edge = edgeArray[e];
       for (let c = 0; c < edge.coordinates.length; c++) {
         const coord = edge.coordinates[c];
+        const distance = input.distanceTo(coord.coordinate);
+        const neighborPlate = tectonics.plates.get(coord.neighborPlateIndex)!;
+        const currentPlate = tectonics.plates.get(coord.regionPlateIndex)!;
+        // const sorted = [neighborPlate.elevation, currentPlate.elevation].sort();
+        const distLerpVal = Math.max(-Math.abs(distance * 0.005) + 100, 0);
+        const remappedDistLerpVal = remap(distLerpVal, 0, 100, 0, 1);        // elevation = Math.max(distance, elevation);
+        elevation = Math.max(remappedDistLerpVal * 100, elevation);
+        continue;
         if (
           coord.boundaryType === BoundaryTypes.SUBDUCTION ||
           coord.boundaryType === BoundaryTypes.SUPERDUCTION ||
           coord.boundaryType === BoundaryTypes.OCEAN_COLLISION
         ) {
           // This is bad, distanceTo is expensive
-          const distance = input.distanceTo(coord.coordinate);
+          // const distance = input.distanceTo(coord.coordinate);
           const magnitude = coord.elevation;
-          const modifier = calculateSubductionElevation(
+          const modifier = calculateMountainElevation(
             distance,
-            magnitude,
+            // magnitude,
             subductionConstants.exponential,
             // Math.max(-coord.pressure + 1, 0.78),
-            subductionConstants.modifier
+            subductionConstants.modifier,
+            plateRegion.plate.elevation
           );
-          const val = modifier + 1 * n;
-          if (val) {
-            subductionElevation += modifier + 1 * m * modifier;
-            // subductionElevation += Math.max(
-            //   modifier + 1 * n,
-            // );
-          }
-          // elevation = modifier + 1 * n;
+          // subductionElevation += modifier * magnitude;
         }
         if (coord.boundaryType === BoundaryTypes.DIVERGING) {
-          const distance = input.distanceTo(coord.coordinate);
+          // const distance = input.distanceTo(coord.coordinate);
           const magnitude = coord.elevation;
-          const modifier = calculateSubductionElevation(
+          const modifier = calculateMountainElevation(
             distance,
-            magnitude,
-
-            subductionConstants.exponential * 1.1,
-            subductionConstants.modifier
+            // magnitude,
+            subductionConstants.exponential,
+            // Math.max(-coord.pressure + 1, 0.78),
+            subductionConstants.modifier,
+            plateRegion.plate.elevation
           );
-          elevation -= modifier + 1 * m * modifier;
+          // subductionElevation -= modifier;
         }
       }
     }
@@ -134,56 +155,58 @@ const tectonicHeightGenerator: ChunkGenerator3Initializer<
     //   });
     // });
     // return MathUtils.lerp(noise.get(input.x, input.y, input.z) elevation
-    return subductionElevation ? subductionElevation + elevation : elevation;
-  };
-
-const testMountainHeight: ChunkGenerator3<ThreadParams, number> = {
-  // maybe we can use this as a base for an ocean
-  get({
-    input,
-    data: { tectonics, subductionConstants, randomTestPoint },
-    radius,
-  }) {
-    let elevation = 0;
-    const distance = input.distanceTo(randomTestPoint);
-    const magnitude = 1;
-    const modifier = calculateSubductionElevation(
-      distance,
-      magnitude,
-      subductionConstants.exponential,
-      subductionConstants.modifier
-    );
-    elevation += modifier + noise.get(input.x, input.y, input.z) * 0.5;
-    return elevation;
-  },
+    // return subductionElevation ? subductionElevation + elevation : elevation;
+    return elevation + n;
+  }
 };
 
-const PlateMovementHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
-  get({ input, data: { tectonics }, radius }) {
-    const finding = Tectonics.findPlateFromCartesian(tectonics, input, hNext);
-    if (finding) {
-      const { plate, region } = finding;
-      const movement = Plate.calculateMovement(
-        plate,
-        tempVector3.copy(region.properties.siteXYZ).clone(),
-        tempVector3.clone()
-      );
-      return movement.length();
-    }
-    return 0;
-  },
-};
+// const testMountainHeight: ChunkGenerator3<ThreadParams, number> = {
+//   // maybe we can use this as a base for an ocean
+//   get({
+//     input,
+//     data: { tectonics, subductionConstants, randomTestPoint },
+//     radius,
+//   }) {
+//     let elevation = 0;
+//     const distance = input.distanceTo(randomTestPoint);
+//     const magnitude = 1;
+//     const modifier = calculateSubductionElevation(
+//       distance,
+//       magnitude,
+//       subductionConstants.exponential,
+//       subductionConstants.modifier
+//     );
+//     elevation += modifier + noise.get(input.x, input.y, input.z) * 0.5;
+//     return elevation;
+//   },
+// };
 
-const PlateElevationHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
-  get({ input, data: { tectonics }, radius }) {
-    const finding = Tectonics.findPlateFromCartesian(tectonics, input, hNext);
-    if (finding) {
-      const { plate, region } = finding;
-      return plate.elevation;
-    }
-    return 0;
-  },
-};
+// const PlateMovementHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
+//   get({ input, data: { tectonics }, radius }) {
+//     const finding = Tectonics.findPlateFromCartesian(tectonics, input, hNext);
+//     if (finding) {
+//       const { plate, region } = finding;
+//       const movement = Plate.calculateMovement(
+//         plate,
+//         tempVector3.copy(region.properties.siteXYZ).clone(),
+//         tempVector3.clone()
+//       );
+//       return movement.length();
+//     }
+//     return 0;
+//   },
+// };
+
+// const PlateElevationHeightGenerator: ChunkGenerator3<ThreadParams, number> = {
+//   get({ input, data: { tectonics }, radius }) {
+//     const finding = Tectonics.findPlateFromCartesian(tectonics, input, hNext);
+//     if (finding) {
+//       const { plate, region } = finding;
+//       return plate.elevation;
+//     }
+//     return 0;
+//   },
+// };
 
 let cNext: number | undefined = undefined;
 
@@ -223,18 +246,19 @@ const colorGenerator: ChunkGenerator3Initializer<ThreadParams, Color> =
   () =>
   ({ input, worldPosition, data: { seaLevel }, radius }) => {
     const height = input.z;
-    // const finding = Tectonics.findPlateFromCartesian(
-    //   tectonics,
-    //   worldPosition,
-    //   cNext
-    // );
+    const finding = Tectonics.findPlateFromCartesian(
+      tectonics,
+      worldPosition,
+      cNext
+    );
     // if (finding) {
-    //   return finding.plate.oceanic ? oceanColor : groundColor;
+    //   return finding.plate.color
+    //   // return finding.plate.oceanic ? oceanColor : groundColor;
     // }
     // return noColor;
     if (height < seaLevel) {
       // return tempColor.clone().setRGB(0, 0, -height);
-      return colorSplines[2].get(remap(height, -20, 0, 0, 1));
+      return colorSplines[2].get(remap(height, -50, 0, 0, 1));
     }
 
     // return tempColor.clone().setRGB(height, height, height);

@@ -302,7 +302,7 @@ export function findEdges(tectonics: Tectonics) {
           edge.coordinates[j].pressure = pressure;
           edge.coordinates[j].shear = shear;
         }
-
+        edge.plates.forEach(plate => plate.edges.push(edge))
         // make sure to add him to the main class
         tectonics.edges.set(edgeKey, edge);
       }
