@@ -7,7 +7,7 @@ import {
 } from "@hello-worlds/planets";
 import { Color, Vector3 } from "three";
 import { LinearSpline } from "./Spline";
-import { BoundaryTypes } from "./tectonics/Edge";
+import { BoundaryTypes, Edge } from "./tectonics/Edge";
 import { Tectonics } from "./tectonics/Tectonics";
 import { remap } from "./tectonics/utils";
 
@@ -54,46 +54,63 @@ function calculateMountainElevation(
   // return Math.max(mountainHeight, 0);
   return Math.max(-Math.abs(distance * width) + height, minPossibleHeight)
 }
+
+
 const tectonicHeightGenerator: ChunkGenerator3Initializer<
   ThreadParams,
   number,
   { tectonics: Tectonics }
 > =
   ({ initialData: { tectonics: mainTectonics }, radius }) => {
-      const noise = new Noise({
-        ...DEFAULT_NOISE_PARAMS,
-        seed: "banana", // <-important
-        height: 50.0,
-        scale: radius / 5,
-      });
-      const mountainNoise2 = new Noise({
-        ...DEFAULT_NOISE_PARAMS,
-        octaves: 2,
-        seed: "kiwi", // <-important
-        height: 10000.0,
-        scale: radius / 2,
-      });
-    const mountainNoise = new Noise({
-        ...DEFAULT_NOISE_PARAMS,
-        octaves: 1,
-        seed: "apple", // <-important
-        height: 10000.0,
-        scale: radius,
-      });
+
+  const noise = new Noise({
+    ...DEFAULT_NOISE_PARAMS,
+    seed: "banana", // <-important
+    height: 1.0,
+    scale: radius / 5,
+  });
+
+  const mountainNoise2 = new Noise({
+    ...DEFAULT_NOISE_PARAMS,
+    octaves: 5,
+    seed: "kiwi", // <-important
+    height: 10,
+    scale: radius / 2,
+  });
+
+  const mountainNoise = new Noise({
+      ...DEFAULT_NOISE_PARAMS,
+      octaves: 3,
+      seed: "apple", // <-important
+      height: 10000.0,
+      scale: radius,
+  });
+
+  let closestEdge: Edge;
+  let closestEdgeDistance: number = Number.MAX_SAFE_INTEGER;
+
   return ({ input, data: { subductionConstants }, radius }) => {
     if (!tectonics && mainTectonics) {
       tectonics = mainTectonics;
     }
 
     const x = mountainNoise2.get(input.x, input.y, input.z);
-    const m = mountainNoise.get(input.x + x, input.y + x, input.z + x);
+    const m = mountainNoise.get(input.x * x, input.y * x, input.z * x);
     const n = noise.get(input.x + m, input.y + m, input.z + m); // warped
+
+    const calculateMountainElevation = (distance: number, mag: number, distLerp: number) => {
+      // const val = Math.sqrt(100*100-distance*distance)
+      return (Math.max(-Math.abs(distance * 0.05) + 1000 * mag, 0) * n * 10 / mag)
+      // return Number.isNaN(val) ? 0.0001: val * n;
+    }
 
     let plateRegion =
       Tectonics.findPlateFromCartesian(tectonics, input, hNext)!;
     // let elevation = plateRegion.plate.elevation;
     // elevation *= n;
-    let elevation = plateRegion.plate.elevation;
+    // let elevation = plateRegion.plate.elevation;
+    let elevation = plateRegion.plate.oceanic ? plateRegion.plate.elevation : remap(m, plateRegion.plate.elevation, 1000, plateRegion.plate.elevation, 50);
+    let boundaryDistanceElevation = 0;
 
     // plateRegion.plate.elevation;
     // plateRegion.plate.neighbors.forEach()
@@ -106,13 +123,30 @@ const tectonicHeightGenerator: ChunkGenerator3Initializer<
       for (let c = 0; c < edge.coordinates.length; c++) {
         const coord = edge.coordinates[c];
         const distance = input.distanceTo(coord.coordinate);
+        // ignore very far away edges
+        if (distance >= 1000 * (n * 1.5)) {
+          continue;
+        }
         const neighborPlate = tectonics.plates.get(coord.neighborPlateIndex)!;
         const currentPlate = tectonics.plates.get(coord.regionPlateIndex)!;
-        // const sorted = [neighborPlate.elevation, currentPlate.elevation].sort();
-        const distLerpVal = Math.max(-Math.abs(distance * 0.005) + 100, 0);
+        if (neighborPlate.index === currentPlate.index) {
+          throw Error("Oh no")
+        }
+
+        if (!closestEdge || distance < closestEdgeDistance) {
+          closestEdge = edge;
+          closestEdgeDistance = distance;
+        }
+      
+        const sorted = [neighborPlate.elevation, currentPlate.elevation].sort();
+        const distLerpVal = Math.max(-Math.abs(distance) + 100, 0);
         const remappedDistLerpVal = remap(distLerpVal, 0, 100, 0, 1);        // elevation = Math.max(distance, elevation);
-        elevation = Math.max(remappedDistLerpVal * 100, elevation);
-        continue;
+        // boundaryDistanceElevation = Math.max(remappedDistLerpVal, boundaryDistanceElevation);
+        // elevation = Math.min(MathUtils.lerp(sorted[1], sorted[0], remappedDistLerpVal), elevation);
+        // elevation += lerp(sorted[1], sorted[0], remappedDistLerpVal * n)
+        elevation = Math.max(Math.max(sorted[0], sorted[1]), elevation)
+        // elevation = remappedDistLerpVal
+        // elevation = Math.max(lerp(elevation, elevation * n, remappedDistLerpVal))
         if (
           coord.boundaryType === BoundaryTypes.SUBDUCTION ||
           coord.boundaryType === BoundaryTypes.SUPERDUCTION ||
@@ -123,26 +157,28 @@ const tectonicHeightGenerator: ChunkGenerator3Initializer<
           const magnitude = coord.elevation;
           const modifier = calculateMountainElevation(
             distance,
-            // magnitude,
-            subductionConstants.exponential,
-            // Math.max(-coord.pressure + 1, 0.78),
-            subductionConstants.modifier,
-            plateRegion.plate.elevation
+            magnitude,
+            n,
+            // // magnitude,
+            // subductionConstants.exponential,
+            // // Math.max(-coord.pressure + 1, 0.78),
+            // subductionConstants.modifier,
           );
+          elevation = Math.max(elevation, modifier);
           // subductionElevation += modifier * magnitude;
         }
         if (coord.boundaryType === BoundaryTypes.DIVERGING) {
           // const distance = input.distanceTo(coord.coordinate);
           const magnitude = coord.elevation;
-          const modifier = calculateMountainElevation(
-            distance,
-            // magnitude,
-            subductionConstants.exponential,
-            // Math.max(-coord.pressure + 1, 0.78),
-            subductionConstants.modifier,
-            plateRegion.plate.elevation
-          );
-          // subductionElevation -= modifier;
+          // const modifier = calculateMountainElevation(
+          //   distance,
+          //   magnitude,
+          //   remappedDistLerpVal,
+          //   // Math.max(-coord.pressure + 1, 0.78),
+          //   subductionConstants.modifier,
+          //   plateRegion.plate.elevation
+          // );
+          // elevation = Math.max(elevation, modifier);
         }
       }
     }
@@ -156,7 +192,8 @@ const tectonicHeightGenerator: ChunkGenerator3Initializer<
     // });
     // return MathUtils.lerp(noise.get(input.x, input.y, input.z) elevation
     // return subductionElevation ? subductionElevation + elevation : elevation;
-    return elevation + n;
+    // return lerp(boundaryDistanceElevation, elevation * n, n);
+    return elevation
   }
 };
 
@@ -243,32 +280,52 @@ colorSplines[2].addPoint(0.98, new Color(0x1d5a67));
 colorSplines[2].addPoint(0.995, new Color(0x469280));
 
 const colorGenerator: ChunkGenerator3Initializer<ThreadParams, Color> =
-  () =>
-  ({ input, worldPosition, data: { seaLevel }, radius }) => {
+  () => {
+  const chunkColor = new Color(Math.random() * 0xffffff);
+  return ({ input, worldPosition, data: { seaLevel }, radius }) => {
     const height = input.z;
-    const finding = Tectonics.findPlateFromCartesian(
-      tectonics,
-      worldPosition,
-      cNext
-    );
+    // return chunkColor;
+
     // if (finding) {
     //   return finding.plate.color
     //   // return finding.plate.oceanic ? oceanColor : groundColor;
     // }
     // return noColor;
+    // return chunkColor.clone().setRGB(height, height, height);
+
+
     if (height < seaLevel) {
+      if (height < -50) {
+        return new Color(0x10313e);
+      }
       // return tempColor.clone().setRGB(0, 0, -height);
       return colorSplines[2].get(remap(height, -50, 0, 0, 1));
     }
 
-    // return tempColor.clone().setRGB(height, height, height);
+    const finding = Tectonics.findPlateFromCartesian(
+      tectonics,
+      worldPosition,
+      cNext
+    );
+    const regionIndex = finding?.region.properties.index;
+    if (!regionIndex) {
+      const c1 = colorSplines[0].get(remap(seaLevel + height, 0, 100, 0, 1));
+      return c1;
+    } 
 
-    const c1 = colorSplines[0].get(remap(seaLevel + height, 0, 100, 0, 1));
-    return c1;
+    // const color = chunkColor.set(seededRandom(finding?.region.properties.index) * 0xffffff);
+    // return color;
+    return finding.plate.color;
+
+
+
+    // const c1 = colorSplines[0].get(remap(seaLevel + height, 0, 100, 0, 1));
+    // return c1;
     // const c2 = colorSplines[1].get(h);
 
     // return c1.lerp(c2, 1);
   };
+};
 
 createThreadedPlanetWorker<ThreadParams>({
   heightGenerator: tectonicHeightGenerator,

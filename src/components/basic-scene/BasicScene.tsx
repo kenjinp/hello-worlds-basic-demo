@@ -6,6 +6,7 @@ const AU = 149_597_870_700;
 
 export const LightRig: React.FC = () => {
   return (
+    <>
     <mesh position={new Vector3(-1, 0.75, 1).multiplyScalar(AU / 20)}>
       <directionalLight color={0xffffff} intensity={1.0} castShadow />
       <sphereGeometry args={[600_000_000 / 4, 32, 16]}></sphereGeometry>
@@ -15,6 +16,16 @@ export const LightRig: React.FC = () => {
         emissiveIntensity={40.0}
       />
     </mesh>
+    <mesh position={new Vector3(1, 0.75, -1).multiplyScalar(AU / 20)}>
+      <directionalLight color={0xffffff} intensity={1.0} castShadow />
+      <sphereGeometry args={[600_000_000 / 4, 32, 16]}></sphereGeometry>
+      <meshStandardMaterial
+        color={0xfdfbd3}
+        emissive={0xfdfbd3}
+        emissiveIntensity={40.0}
+      />
+    </mesh>
+    </>
   );
 };
 

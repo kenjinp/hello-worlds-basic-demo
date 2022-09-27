@@ -3,12 +3,11 @@ import { useThree } from "@react-three/fiber";
 import { useControls } from "leva";
 import * as React from "react";
 import {
+  BackSide,
   BufferGeometry,
-  Color,
-  Float32BufferAttribute,
+  Color, Float32BufferAttribute,
   Mesh,
-  MeshStandardMaterial,
-  Sphere,
+  MeshBasicMaterial, Sphere,
   Vector3
 } from "three";
 import { randomSpherePoint } from "../moon/Moon.math";
@@ -22,7 +21,7 @@ import {
 } from "./tectonics/TectonicsComponent";
 import { VoronoiSphere } from "./voronoi/Voronoi";
 
-const material = new MeshStandardMaterial({ vertexColors: true });
+const material = new MeshBasicMaterial({ vertexColors: true, side: BackSide });
 
 // const MemoPlanet = React.memo(HelloPlanet);
 
@@ -92,7 +91,7 @@ export const Planet: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     planetRadius: {
       min: 100,
       max: 6_000_000,
-      value: 5_000 * 4,
+      value: 20_000,
       step: 10,
     },
     jitter: {

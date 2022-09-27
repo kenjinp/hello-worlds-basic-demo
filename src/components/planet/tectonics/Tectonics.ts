@@ -57,7 +57,6 @@ export class Tectonics {
 
     findEdges(this);
 
-    console.log(this);
     const edgeSize = this.edges.size;
     const totalNeighbors = Array.from(this.plates.values()).reduce(
       (memo, plate) => {
